@@ -1,7 +1,7 @@
 #include "sensorselectionwindow.h"
 #include <QVBoxLayout>
 #include <QHBoxLayout>
-#include <QFile>
+#include <QCoreApplication>
 #include <QTextStream>
 #include <QDebug>
 #include <QMessageBox>
@@ -83,15 +83,67 @@ void SensorSelectionWindow::filterSensors(const QString &text)
 
 void SensorSelectionWindow::confirmSelection()
 {
-    QListWidgetItem *selectedItem = sensorList->currentItem();  // Obtém o item selecionado
+    QListWidgetItem *selectedItem = sensorList->currentItem(); // Obtém o item selecionado
 
     if (selectedItem) {
-        emit sensorSelected(selectedItem->text());  // Emite o sinal com o nome do sensor
+        QString filePath = QCoreApplication::applicationDirPath() + "/sensors.csv";
+        QFile file(filePath);
 
+        if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
+            QMessageBox::critical(this, "Error", "Falha em abrir sensors.csv em modo leitura.");
+            return;
+        }
 
-        close();  // Fecha a janela
+        QTextStream in(&file);
+        bool sensorFound = false;
+
+        // Skip the header line
+        in.readLine();
+
+        QString sensorName = selectedItem->text();
+
+        SensorData sensor_selected;
+
+        // ler linha por linha até encontrar o modelo
+        while (!in.atEnd()) {
+            QString line = in.readLine();
+            QStringList parts = line.split(",");
+
+            // Check for at least 4 columns before accessing elements
+            if (parts.size() < 4) {
+                qWarning() << "Invalid line in sensor data file: " << line;
+                continue; // Skip to the next line
+            }
+
+            if (parts[0] == sensorName) {
+                sensorFound = true;
+
+                sensor_selected.model_name = sensorName;
+                // Check parts.size() before accessing elements
+                if (parts.size() >= 2) {
+                    sensor_selected.start_angle = parts[1].toDouble();
+                }
+                if (parts.size() >= 3) {
+                    sensor_selected.arrive_angle = parts[2].toDouble();
+                }
+                if (parts.size() >= 4) {
+                    sensor_selected.turn_direction = parts[3];
+                }
+                break;
+            }
+        }
+
+        file.close();
+
+        if (!sensorFound) {
+            QMessageBox::warning(this, "Sensor não encontrado", "O sensor selecionado não foi encontrado nos CSV.");
+        }
+
+        emit sensorSelected(sensor_selected); // Emite o sinal com o nome do sensor e suas informações
+
+        close(); // Fecha a janela
     } else {
-        QMessageBox::warning(this, "No Selection", "Please select a sensor.");
+        QMessageBox::warning(this, "No Selection", "Selecione um sensor.");
     }
 }
 
@@ -99,3 +151,5 @@ void SensorSelectionWindow::cancelSelection()
 {
     close();  // Fecha a janela sem fazer nada
 }
+
+

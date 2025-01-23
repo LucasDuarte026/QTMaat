@@ -5,6 +5,9 @@
 #include <QListWidget>
 #include <QLineEdit>
 #include <QPushButton>
+#include <QFile>
+#include "datatypes.h"
+
 
 
 class SensorSelectionWindow : public QWidget
@@ -16,7 +19,7 @@ public:
     ~SensorSelectionWindow();
 
 signals:
-    void sensorSelected(const QString &sensorName);  // Sinal emitido ao selecionar um sensor
+    void sensorSelected(SensorData &sensor_selected);  // Sinal emitido ao selecionar um sensor
 
 private slots:
     void filterSensors(const QString &text);         // Filtro de busca

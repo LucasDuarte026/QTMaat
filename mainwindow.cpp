@@ -5,26 +5,36 @@
 #include "removesensordialog.h"
 #include "viewsensorsdialog.h"
 
-int main_circle_x = 300, main_circle_y = 300;
-int green_circle_x = 330, green_circle_y = 330;
+
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
     , sensorWindow(nullptr)  // Inicializa o ponteiro como nullptr
+    , sensorData{"Modelo não selecionado",0.0,0.0,"Sem sentido"}
 
 {
+// config section
     ui->setupUi(this); // configurar e iniciar os elementos definidos em UI
 
-    QPixmap pixmap1(":/images/resources/main_circle.png");  // trocar pela imagem do black cicle
-    ui->label_mainCircle->setPixmap(pixmap1);
+    myDial = ui->dial_elements->findChild<QDial*>("plan_dial"); // usando o dial criado no UI
+
+
+
+// seção das conexões
+    //  Quando o sensor é selecionado, deve se mudar as variaveis privadas de mainWindow
+
+    // Example: Connecting a signal from the QDial
+
+
+    // QPixmap pixmap1(":/images/resources/main_circle.png");  // trocar pela imagem do black cicle
+    // ui->label_mainCircle->setPixmap(pixmap1);
     QPixmap pixmap2(":/images/resources/green_cicle.png");  // // trocar pela imagem do green circle
     ui->label_greenCircle->setPixmap(pixmap2);
-    // Conexões
+    // // Conexões
 
-    // inicializar as imagens
-    ui->label_mainCircle->move(main_circle_x, main_circle_y);
-    ui->label_greenCircle->move(green_circle_x, green_circle_y);
+    // // inicializar as imagens
+    // ui->label_mainCircle->move(main_circle_x, main_circle_y);
     connect(ui->sensorSelected, &QPushButton::clicked, this, &MainWindow::on_sensorSelected_clicked);
 }
 
@@ -39,7 +49,8 @@ void MainWindow::on_sensorSelected_clicked()
     if (!sensorWindow) {
         sensorWindow = new SensorSelectionWindow(this);  // Define o MainWindow como pai
 
-        connect(sensorWindow, &SensorSelectionWindow::sensorSelected, this, &MainWindow::updateSensorLabel);
+        connect(sensorWindow, &SensorSelectionWindow::sensorSelected, this, &MainWindow::updateSensorDependencies);
+        // connect(sensorWindow, &SensorSelectionWindow::sensorSelected, this, &MainWindow::updateDial);
 
     }
     sensorWindow->show();  // Mostra a janela de seleção
@@ -91,23 +102,23 @@ void MainWindow::on_actionAdicionar_triggered()
 
     // Exibir o diálogo para adicionar sensor
     AddSensorDialog dialog(this);
-
+    SensorData add;
     if (dialog.exec() == QDialog::Accepted) {
-        QString modelName = dialog.getModelName();
-        float startAngle = dialog.getStartAngle();
-        float endAngle = dialog.getEndAngle();
-        QString rotation = dialog.getRotationDirection();
+        add.model_name = dialog.getModelName();
+        add.start_angle = dialog.getStartAngle();
+        add.arrive_angle= dialog.getEndAngle();
+        add.turn_direction= dialog.getRotationDirection();
 
         // Verificar se o modelo já existe no CSV
         for (const QStringList &row : csvData) {
-            if (row[0] == modelName) {
+            if (row[0] == add.model_name) {
                 QMessageBox::critical(this, "Erro", "O modelo a ser inserido já está incluído. Remova-o para inserir novamente.");
                 return;
             }
         }
 
         // Adicionar a nova linha ao vetor
-        QStringList newRow = { modelName, QString::number(startAngle), QString::number(endAngle), rotation };
+        QStringList newRow = { add.model_name, QString::number(add.start_angle), QString::number(add.arrive_angle), add.turn_direction };
         csvData.append(newRow);
 
         // Ordenar as linhas em ordem alfabética pelo nome do modelo (primeira coluna)
@@ -229,67 +240,46 @@ void MainWindow::on_actionVer_sensores_triggered()
     dialog.exec();  // Exibir como diálogo modal
 }
 
-void MainWindow::updateSensorLabel(const QString &sensorName)
-{
-    QString filePath = QCoreApplication::applicationDirPath() + "/sensors.csv";
-    QFile file(filePath);
+void MainWindow::updateSensorDependencies(SensorData &_sensorData) {
+    // myDial->updateDial(_sensorData)
 
-    if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
-        QMessageBox::critical(this, "Error", "Falha em abrir sensors.csv em modo leitura.");
-        return;
-    }
+        // Atualizar os dados do dial
 
-    QTextStream in(&file);
-    bool sensorFound = false;
+    // Atualizar as configurações do dial de forma segura
+    myDial->blockSignals(true); // Evita emitir sinais durante a atualização
+    myDial->setMinimum(_sensorData.start_angle);
+    myDial->setMaximum(_sensorData.arrive_angle);
+    myDial->setWrapping(true); // Definir comportamento de wrapping (não deve causar crash)
+    myDial->setValue(_sensorData.start_angle);
+    myDial->blockSignals(false); // Reativa os sinais
 
-    // Skip the header line
-    in.readLine();
-
-    // Read each line to find the matching sensor
-    while (!in.atEnd()) {
-        QString line = in.readLine();
-        QStringList parts = line.split(",");
-
-        // Ensure the row has at least 4 columns
-        if (parts.size() >= 4 && parts[0] == sensorName) {
-            sensorFound = true;
-
-            // Update the labels with the corresponding values
-            ui->sensorSelected->setText(sensorName);
-            ui->label_angle_start->setText(parts[1]);
-            ui->label_angle_end->setText(parts[2]);
-            ui->label_turn_direction->setText(parts[3]);
-
-            model_name     = sensorName;
-            start_angle    = parts[1].toDouble();;
-            arrive_angle   = parts[2].toDouble();;
-            turn_direction = parts[3];
-            qDebug() << "Após a alteração, o modelo escolhido é:";
-            qDebug() << "Model Name:" << model_name;
-            qDebug() << "Start Angle:" << start_angle;
-            qDebug() << "Arrive Angle:" << arrive_angle;
-            qDebug() << "Turn Direction:" << turn_direction;
-            break;
-        }
-    }
-
-    file.close();
-
-    if (!sensorFound) {
-        QMessageBox::warning(this, "Sensor Not Found", "The selected sensor was not found in the CSV file.");
-    }
+    qDebug() << "Dial updated with new sensor data:";
+    qDebug() << "Model:" << _sensorData.model_name
+             << "Start Angle:" << _sensorData.start_angle
+             << "Arrive Angle:" << _sensorData.arrive_angle
+             << "Turn Direction:" << _sensorData.turn_direction;
 }
 
-void MainWindow::on_actionUpdatePositions_triggered()
+void MainWindow::setSensorData(SensorData _data)
 {
-    // Update global position variables
-    main_circle_x += 10; // Move 10px to the right
-    main_circle_y += 5;  // Move 5px down
-
-    green_circle_x -= 10; // Move 10px to the left
-    green_circle_y -= 5;  // Move 5px up
-
-    // Update positions of labels
-    ui->label_mainCircle->move(main_circle_x, main_circle_y);
-    ui->label_greenCircle->move(green_circle_x, green_circle_y);
+    this->sensorData = _data;
 }
+
+
+QString MainWindow::getModelName()
+{
+    return this->sensorData.model_name ;
+}
+double MainWindow::getStartAngle()
+{
+    return this->sensorData.start_angle;
+}
+double MainWindow::getArriveAngle()
+{
+    return this->sensorData.arrive_angle;
+}
+QString MainWindow::getTurnDirection()
+{
+    return this->sensorData.turn_direction ;
+}
+

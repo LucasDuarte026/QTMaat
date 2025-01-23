@@ -2,49 +2,51 @@
 #define MAINWINDOW_H
 
 #include <QMainWindow>
-#include <QButtonGroup>
 #include <QMessageBox>
-#include <QFile>
-#include <QString>
-#include <QLabel>
-#include "sensorselectionwindow.h"  // Inclui a a janela de seleção de sensores
+#include <QDial>
 
-QT_BEGIN_NAMESPACE
+#include "sensorselectionwindow.h"
+#include "datatypes.h"
+
+
+
 namespace Ui {
 class MainWindow;
 }
-QT_END_NAMESPACE
 
 class MainWindow : public QMainWindow
 {
     Q_OBJECT
 
 public:
-    MainWindow(QWidget *parent = nullptr);
+    explicit MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
-    QString model_name;
-    double start_angle;
-    double arrive_angle;
-    QString turn_direction;
+    QString getModelName();
+    double getStartAngle();
+    double getArriveAngle();
+    QString getTurnDirection();
+
 
 private slots:
-    void on_sensorSelected_clicked();  // Slot para abrir a janela de seleção
-
+    void updateSensorDependencies(SensorData &_sensorData);
+    void on_sensorSelected_clicked();
     void on_actionAdicionar_triggered();
-
     void on_actionRemover_triggered();
-
     void on_actionVer_sensores_triggered();
 
-    void updateSensorLabel(const QString &sensorName);  // Slot to update the label
-
-    void on_actionUpdatePositions_triggered();
+    void setSensorData(SensorData _data);
+    // void setModelName(QString _model_name);
+    // void setStartAngle(double angle);
+    // void setArriveAngle(double angle);
+    // void setTurnDirection(QString _turnDirection);
 
 
 
 private:
     Ui::MainWindow *ui;
-    SensorSelectionWindow *sensorWindow;  // Ponteiro para a a janela de seleção de sensores
-
+    QDial *myDial;
+    SensorSelectionWindow *sensorWindow;
+    SensorData sensorData;
 };
+
 #endif // MAINWINDOW_H
