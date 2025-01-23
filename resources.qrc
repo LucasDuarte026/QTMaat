@@ -1,0 +1,10 @@
+<RCC>
+    <qresource prefix="/images">
+        <file>resources/black_circle.png</file>
+        <file>resources/clockwise.png</file>
+        <file>resources/counterclockwise.png</file>
+        <file>resources/green_circle.png</file>
+        <file>resources/red_cross.png</file>
+        <file>resources/main_circle.png</file>
+    </qresource>
+</RCC>

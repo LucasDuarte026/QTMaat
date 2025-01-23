@@ -1,0 +1,29 @@
+{
+	"BUILD_DIR" : "C:/Users/micro/OneDrive/Documentos/PanFlight/QTMaat/build/Desktop_Qt_6_8_1_MinGW_64_bit-Release/QTMaat_autogen",
+	"CMAKE_BINARY_DIR" : "C:/Users/micro/OneDrive/Documentos/PanFlight/QTMaat/build/Desktop_Qt_6_8_1_MinGW_64_bit-Release",
+	"CMAKE_CURRENT_BINARY_DIR" : "C:/Users/micro/OneDrive/Documentos/PanFlight/QTMaat/build/Desktop_Qt_6_8_1_MinGW_64_bit-Release",
+	"CMAKE_CURRENT_SOURCE_DIR" : "C:/Users/micro/OneDrive/Documentos/PanFlight/QTMaat",
+	"CMAKE_SOURCE_DIR" : "C:/Users/micro/OneDrive/Documentos/PanFlight/QTMaat",
+	"CROSS_CONFIG" : false,
+	"GENERATOR" : "Ninja",
+	"INCLUDE_DIR" : "C:/Users/micro/OneDrive/Documentos/PanFlight/QTMaat/build/Desktop_Qt_6_8_1_MinGW_64_bit-Release/QTMaat_autogen/include",
+	"INPUTS" : 
+	[
+		"C:/Users/micro/OneDrive/Documentos/PanFlight/QTMaat/resources/black_circle.png",
+		"C:/Users/micro/OneDrive/Documentos/PanFlight/QTMaat/resources/green_circle.png",
+		"C:/Users/micro/OneDrive/Documentos/PanFlight/QTMaat/resources/red_cross.png",
+		"C:/Users/micro/OneDrive/Documentos/PanFlight/QTMaat/resources/clockwise.png",
+		"C:/Users/micro/OneDrive/Documentos/PanFlight/QTMaat/resources/counterclockwise.png"
+	],
+	"LOCK_FILE" : "C:/Users/micro/OneDrive/Documentos/PanFlight/QTMaat/build/Desktop_Qt_6_8_1_MinGW_64_bit-Release/CMakeFiles/QTMaat_autogen.dir/AutoRcc_resources_EWIEGA46WW_Lock.lock",
+	"MULTI_CONFIG" : false,
+	"OPTIONS" : [ "--no-zstd", "-name", "resources" ],
+	"OUTPUT_CHECKSUM" : "EWIEGA46WW",
+	"OUTPUT_NAME" : "qrc_resources.cpp",
+	"RCC_EXECUTABLE" : "C:/Qt/6.8.1/mingw_64/bin/rcc.exe",
+	"RCC_LIST_OPTIONS" : [ "--list" ],
+	"SETTINGS_FILE" : "C:/Users/micro/OneDrive/Documentos/PanFlight/QTMaat/build/Desktop_Qt_6_8_1_MinGW_64_bit-Release/CMakeFiles/QTMaat_autogen.dir/AutoRcc_resources_EWIEGA46WW_Used.txt",
+	"SOURCE" : "C:/Users/micro/OneDrive/Documentos/PanFlight/QTMaat/resources.qrc",
+	"USE_BETTER_GRAPH" : true,
+	"VERBOSITY" : 0
+}

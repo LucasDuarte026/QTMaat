@@ -1,0 +1,9 @@
+C:/Users/micro/OneDrive/Documentos/PanFlight/QTMaat/build/Desktop_Qt_6_8_1_MinGW_64_bit-new/CMakeFiles/QTMaat.dir
+C:/Users/micro/OneDrive/Documentos/PanFlight/QTMaat/build/Desktop_Qt_6_8_1_MinGW_64_bit-new/CMakeFiles/edit_cache.dir
+C:/Users/micro/OneDrive/Documentos/PanFlight/QTMaat/build/Desktop_Qt_6_8_1_MinGW_64_bit-new/CMakeFiles/rebuild_cache.dir
+C:/Users/micro/OneDrive/Documentos/PanFlight/QTMaat/build/Desktop_Qt_6_8_1_MinGW_64_bit-new/CMakeFiles/list_install_components.dir
+C:/Users/micro/OneDrive/Documentos/PanFlight/QTMaat/build/Desktop_Qt_6_8_1_MinGW_64_bit-new/CMakeFiles/install.dir
+C:/Users/micro/OneDrive/Documentos/PanFlight/QTMaat/build/Desktop_Qt_6_8_1_MinGW_64_bit-new/CMakeFiles/install/local.dir
+C:/Users/micro/OneDrive/Documentos/PanFlight/QTMaat/build/Desktop_Qt_6_8_1_MinGW_64_bit-new/CMakeFiles/install/strip.dir
+C:/Users/micro/OneDrive/Documentos/PanFlight/QTMaat/build/Desktop_Qt_6_8_1_MinGW_64_bit-new/CMakeFiles/QTMaat_autogen_timestamp_deps.dir
+C:/Users/micro/OneDrive/Documentos/PanFlight/QTMaat/build/Desktop_Qt_6_8_1_MinGW_64_bit-new/CMakeFiles/QTMaat_autogen.dir

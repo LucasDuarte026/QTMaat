@@ -1,0 +1,4 @@
+Model,start_angle,arrive_angle,turn_direction
+modelo,25,25.2,CW
+modelo10,0,54,CCW
+modelo2,55,56,CW
