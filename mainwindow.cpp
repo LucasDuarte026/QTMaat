@@ -19,8 +19,7 @@ MainWindow::MainWindow(QWidget *parent)
     ui->setupUi(this); // configurar e iniciar os elementos definidos em UI
 
     myDial = ui->dial_elements->findChild<QDial*>("plan_dial"); // usando o dial criado no UI
-    mySpinBox = ui->spinBox_dial;
-
+    myInsertDegree = ui->degreeInsertDial;
     if(myDial){
         configDial(myDial);
     }
@@ -40,6 +39,25 @@ MainWindow::MainWindow(QWidget *parent)
 
     connect(ui->sensorSelected, &QPushButton::clicked, this, &MainWindow::by_sensorSelected_action);
     connect(ui->animate_dial_button, &QPushButton::clicked, this, &MainWindow::by_animate_dial_button_action);
+
+    connect(myDial, &QDial::valueChanged, this, [this](){
+        ui->actual_dial_degree->setText(QString::number(myDial->value())+"º");
+    });
+    connect(myInsertDegree, &QLineEdit::returnPressed, this, [this](){
+        bool ok;
+        double insertedValue = myInsertDegree->text().toInt(&ok);
+        qDebug() << "Valor alterado para:" << insertedValue;
+        if(ok && insertedValue<= 360 && insertedValue>=0){
+        myDial->setValue(insertedValue);
+        }
+        else{
+            QMessageBox::critical(this, "Erro", "Insira o dado flutuante corretamente entre 0 a 360º");
+        }
+        /*
+        int value = myInsertDegree->
+        ui->actual_dial_degree->setText(QString::number(myDial->value())+"º");*/
+    });
+
     connect(myDial, &QDial::sliderReleased, this, [this]() {
         double min = sensorData.start_angle ;
         double max = sensorData.arrive_angle ;

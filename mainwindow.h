@@ -44,6 +44,7 @@ private:
     Ui::MainWindow *ui;
     QDial *myDial;
     QDoubleSpinBox *mySpinBox;
+    QLineEdit *myInsertDegree;
     SensorSelectionWindow *sensorWindow;
     SensorData sensorData;
     void configDial(QDial *_myDial);
