@@ -95,12 +95,18 @@ void AddSensorDialog::validateInputs()
     bool startAngleOk = false;
     bool endAngleOk = false;
 
-    startAngleEdit->text().toFloat(&startAngleOk);  // Tenta converter para float
-    endAngleEdit->text().toFloat(&endAngleOk);      // Tenta converter para float
+    double start = startAngleEdit->text().toFloat(&startAngleOk);  // Tenta converter para float
+    double end = endAngleEdit->text().toFloat(&endAngleOk);      // Tenta converter para float
 
     if (!startAngleOk || !endAngleOk) {
         QMessageBox::warning(this, "Formato inválido", "Insira os valores com ponto flutuante");
         return;
     }
+    if(end<=start){
+        QMessageBox::warning(this, "Formato inválido", "Insira os o ângulo final maior que âangulo de entrada\n -> Use a lógica Clockwise ou CounterClockwise");
+        return;
+    }
+
+
     accept();  // Fecha o diálogo e sinaliza sucesso
 }

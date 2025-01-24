@@ -4,7 +4,8 @@
 #include <QMainWindow>
 #include <QMessageBox>
 #include <QDial>
-
+#include <QTimer>
+#include <QDoubleSpinBox>
 #include "sensorselectionwindow.h"
 #include "datatypes.h"
 
@@ -28,25 +29,25 @@ public:
 
 
 private slots:
-    void updateSensorDependencies(SensorData &_sensorData);
-    void on_sensorSelected_clicked();
+    void updateSensorDependencies(SensorData *_sensorData);
+    void by_sensorSelected_action();
     void on_actionAdicionar_triggered();
     void on_actionRemover_triggered();
     void on_actionVer_sensores_triggered();
-
+    void by_animate_dial_button_action();
     void setSensorData(SensorData _data);
-    // void setModelName(QString _model_name);
-    // void setStartAngle(double angle);
-    // void setArriveAngle(double angle);
-    // void setTurnDirection(QString _turnDirection);
+
 
 
 
 private:
     Ui::MainWindow *ui;
     QDial *myDial;
+    QDoubleSpinBox *mySpinBox;
     SensorSelectionWindow *sensorWindow;
     SensorData sensorData;
+    void configDial(QDial *_myDial);
+
 };
 
 #endif // MAINWINDOW_H

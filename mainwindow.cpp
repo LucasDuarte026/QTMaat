@@ -7,18 +7,25 @@
 
 
 
+
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
     , sensorWindow(nullptr)  // Inicializa o ponteiro como nullptr
-    , sensorData{"Modelo não selecionado",0.0,0.0,"Sem sentido"}
+    , sensorData{"Modelo não selecionado",0.0,360.0,"Sem sentido"}
 
 {
 // config section
     ui->setupUi(this); // configurar e iniciar os elementos definidos em UI
 
     myDial = ui->dial_elements->findChild<QDial*>("plan_dial"); // usando o dial criado no UI
+    mySpinBox = ui->spinBox_dial;
 
+    if(myDial){
+        configDial(myDial);
+    }
+
+// seção das configurações
 
 
 // seção das conexões
@@ -26,16 +33,25 @@ MainWindow::MainWindow(QWidget *parent)
 
     // Example: Connecting a signal from the QDial
 
+    // inicializar a imagem
 
-    // QPixmap pixmap1(":/images/resources/main_circle.png");  // trocar pela imagem do black cicle
-    // ui->label_mainCircle->setPixmap(pixmap1);
     QPixmap pixmap2(":/images/resources/green_cicle.png");  // // trocar pela imagem do green circle
     ui->label_greenCircle->setPixmap(pixmap2);
-    // // Conexões
 
-    // // inicializar as imagens
-    // ui->label_mainCircle->move(main_circle_x, main_circle_y);
-    connect(ui->sensorSelected, &QPushButton::clicked, this, &MainWindow::on_sensorSelected_clicked);
+    connect(ui->sensorSelected, &QPushButton::clicked, this, &MainWindow::by_sensorSelected_action);
+    connect(ui->animate_dial_button, &QPushButton::clicked, this, &MainWindow::by_animate_dial_button_action);
+    connect(myDial, &QDial::sliderReleased, this, [this]() {
+        double min = sensorData.start_angle ;
+        double max = sensorData.arrive_angle ;
+        double value = myDial->value();
+        qDebug() << "valor atual é:" << value;
+        if(value < min)
+            myDial->setValue(min);
+        else if( value> max)
+            myDial->setValue(max);
+
+    });
+
 }
 
 MainWindow::~MainWindow()
@@ -43,19 +59,32 @@ MainWindow::~MainWindow()
     delete ui;
 }
 
-void MainWindow::on_sensorSelected_clicked()
+void MainWindow::by_sensorSelected_action()
 {
     // Cria a janela de seleção se ainda não existir
-    if (!sensorWindow) {
-        sensorWindow = new SensorSelectionWindow(this);  // Define o MainWindow como pai
+    sensorWindow = new SensorSelectionWindow(this);  // Define o MainWindow como pai
+    connect(sensorWindow, &SensorSelectionWindow::sensorSelected, this, &MainWindow::updateSensorDependencies);
+    // connect(sensorWindow, &QObject::destroyed, this, [this]() {
+    //     sensorWindow = nullptr;
+    //     });
 
-        connect(sensorWindow, &SensorSelectionWindow::sensorSelected, this, &MainWindow::updateSensorDependencies);
-        // connect(sensorWindow, &SensorSelectionWindow::sensorSelected, this, &MainWindow::updateDial);
 
-    }
     sensorWindow->show();  // Mostra a janela de seleção
-}
 
+}
+void MainWindow::by_animate_dial_button_action()
+{
+    double min = sensorData.start_angle;
+    double max= sensorData.arrive_angle;
+    qDebug() << "tela entrou";
+    for(double i=min;i<=max;i=i+0.1){
+        qDebug() << "Init" << min << "| Fim"  << max << "| posição do dial é:" << i ;
+        myDial->setValue(i);
+        QEventLoop loop;
+        QTimer::singleShot(1, &loop, &QEventLoop::quit); // Pausa por 100ms
+        loop.exec();    }
+
+}
 void MainWindow::on_actionAdicionar_triggered()
 {
     // Caminho do arquivo CSV no diretório raiz do projeto
@@ -240,31 +269,44 @@ void MainWindow::on_actionVer_sensores_triggered()
     dialog.exec();  // Exibir como diálogo modal
 }
 
-void MainWindow::updateSensorDependencies(SensorData &_sensorData) {
-    // myDial->updateDial(_sensorData)
+void MainWindow::updateSensorDependencies(SensorData *_sensorData) {
 
-        // Atualizar os dados do dial
+// Atualizar dados do sensor mostrado
+    setSensorData(*_sensorData);
+    ui->sensorSelected->setText(this->sensorData.model_name);
+    ui->label_angle_start->setText(QString::number(this->sensorData.start_angle));
+    ui->label_angle_end->setText(QString::number(this->sensorData.arrive_angle));
+    ui->label_turn_direction->setText(this->sensorData.turn_direction);
+    myDial->setValue(this->sensorData.start_angle);
+// Atualizar os dados do dial
 
-    // Atualizar as configurações do dial de forma segura
-    myDial->blockSignals(true); // Evita emitir sinais durante a atualização
-    myDial->setMinimum(_sensorData.start_angle);
-    myDial->setMaximum(_sensorData.arrive_angle);
-    myDial->setWrapping(true); // Definir comportamento de wrapping (não deve causar crash)
-    myDial->setValue(_sensorData.start_angle);
-    myDial->blockSignals(false); // Reativa os sinais
 
-    qDebug() << "Dial updated with new sensor data:";
-    qDebug() << "Model:" << _sensorData.model_name
-             << "Start Angle:" << _sensorData.start_angle
-             << "Arrive Angle:" << _sensorData.arrive_angle
-             << "Turn Direction:" << _sensorData.turn_direction;
+
+
+    qDebug() << "\nSistema configurado e atualizado ao modelo:";
+    qDebug() << "Model:" << sensorData.model_name;
+    qDebug() << "Start Angle:" << sensorData.start_angle;
+    qDebug() << "Arrive Angle:" << sensorData.arrive_angle;
+    qDebug() << "Turn Direction:" << sensorData.turn_direction;
 }
+
+void MainWindow::configDial(QDial *_myDial){
+    _myDial->setMinimum(sensorData.start_angle);
+    _myDial->setMaximum(sensorData.arrive_angle);
+    _myDial->setNotchesVisible(true);
+    _myDial->setNotchTarget(3.7);
+    _myDial->setWrapping(true); // Definir comportamento de wrapping
+    _myDial->setSingleStep(1);
+    _myDial->setValue(50);
+
+
+}
+//  -------------- setters e getters para os dados da main --------------
 
 void MainWindow::setSensorData(SensorData _data)
 {
     this->sensorData = _data;
 }
-
 
 QString MainWindow::getModelName()
 {
@@ -282,4 +324,5 @@ QString MainWindow::getTurnDirection()
 {
     return this->sensorData.turn_direction ;
 }
+
 

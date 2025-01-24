@@ -6,6 +6,7 @@
 #include <QLineEdit>
 #include <QPushButton>
 #include <QFile>
+#include <QDebug>
 #include "datatypes.h"
 
 
@@ -19,7 +20,7 @@ public:
     ~SensorSelectionWindow();
 
 signals:
-    void sensorSelected(SensorData &sensor_selected);  // Sinal emitido ao selecionar um sensor
+    void sensorSelected(SensorData *sensor_selected);  // Sinal emitido ao selecionar um sensor
 
 private slots:
     void filterSensors(const QString &text);         // Filtro de busca
@@ -31,8 +32,8 @@ private:
     QListWidget *sensorList;     // Lista de sensores
     QPushButton *okButton;       // Botão "OK"
     QPushButton *cancelButton;   // Botão "Cancel"
-
     void loadSensors();          // Carrega os sensores do arquivo
+
 };
 
 #endif // SENSORSELECTIONWINDOW_H

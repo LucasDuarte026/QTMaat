@@ -41,6 +41,8 @@ SensorSelectionWindow::SensorSelectionWindow(QWidget *parent)
 
     // Conectar o botão "Cancel"
     connect(cancelButton, &QPushButton::clicked, this, &SensorSelectionWindow::cancelSelection);
+
+    // setAttribute(Qt::WA_DeleteOnClose); // toda vez que a janela for fechada, excluir a classe
 }
 
 SensorSelectionWindow::~SensorSelectionWindow()
@@ -51,15 +53,15 @@ void SensorSelectionWindow::loadSensors()
 {
     QFile file("sensors.csv");
     if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
-        qWarning() << "Failed to open sensor database!";
+        qWarning() << "Falha em abrir o DataBase!";
         return;
     }
-
+    qDebug() << "loadSensors";
     QTextStream in(&file);
 
-    // Skip the header line
+    // Pula o cabeçalho do CSV
     if (!in.atEnd()) {
-        in.readLine();  // Read and discard the first line
+        in.readLine();  // lê e descarta a primeira linhas
     }
     while (!in.atEnd()) {
         QString line = in.readLine();
@@ -139,7 +141,8 @@ void SensorSelectionWindow::confirmSelection()
             QMessageBox::warning(this, "Sensor não encontrado", "O sensor selecionado não foi encontrado nos CSV.");
         }
 
-        emit sensorSelected(sensor_selected); // Emite o sinal com o nome do sensor e suas informações
+        SensorData *sensor_selected_ptr = new SensorData(sensor_selected); // pega o ponteiro alocado do objeto para passar para frente
+        emit sensorSelected(sensor_selected_ptr); // Emite o sinal com o nome do sensor e suas informações
 
         close(); // Fecha a janela
     } else {
