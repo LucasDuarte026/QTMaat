@@ -4,6 +4,7 @@
 #include <QMainWindow>
 #include <QMessageBox>
 #include <QDial>
+#include <QProgressBar>
 #include <QTimer>
 #include <QDoubleSpinBox>
 #include "sensorselectionwindow.h"
@@ -43,10 +44,14 @@ private slots:
 private:
     Ui::MainWindow *ui;
     QDial *myDial;
+    QProgressBar *myAnimate_progress_bar;
     QDoubleSpinBox *mySpinBox;
     QLineEdit *myInsertDegree;
     SensorSelectionWindow *sensorWindow;
     SensorData sensorData;
+    double actual_servo_value;
+
+    void setServoAbsolutePosition(double _value);
     void configDial(QDial *_myDial);
 
 };

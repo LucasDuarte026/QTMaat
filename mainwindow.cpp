@@ -13,13 +13,17 @@ MainWindow::MainWindow(QWidget *parent)
     , ui(new Ui::MainWindow)
     , sensorWindow(nullptr)  // Inicializa o ponteiro como nullptr
     , sensorData{"Modelo não selecionado",0.0,360.0,"Sem sentido"}
-
+    , actual_servo_value(0.0)
 {
 // config section
     ui->setupUi(this); // configurar e iniciar os elementos definidos em UI
 
     myDial = ui->dial_elements->findChild<QDial*>("plan_dial"); // usando o dial criado no UI
     myInsertDegree = ui->degreeInsertDial;
+    myAnimate_progress_bar = ui->animate_progress_bar;
+    myAnimate_progress_bar->setMinimum(this->sensorData.start_angle);
+    myAnimate_progress_bar->setMaximum(this->sensorData.arrive_angle);
+    myAnimate_progress_bar->setValue(0);
     if(myDial){
         configDial(myDial);
     }
@@ -41,21 +45,21 @@ MainWindow::MainWindow(QWidget *parent)
     connect(ui->animate_dial_button, &QPushButton::clicked, this, &MainWindow::by_animate_dial_button_action);
 
     connect(myDial, &QDial::valueChanged, this, [this](){
-        ui->actual_dial_degree->setText(QString::number(myDial->value())+"º");
+        // ui->actual_dial_degree->setText(QString::number(myDial->value(),'f',4)+"º");
+        ui->actual_dial_degree->setText(QString::number(this->actual_servo_value,'f',4)+"º");
+
     });
     connect(myInsertDegree, &QLineEdit::returnPressed, this, [this](){
         bool ok;
-        double insertedValue = myInsertDegree->text().toInt(&ok);
+        double insertedValue = myInsertDegree->text().toDouble(&ok);
         qDebug() << "Valor alterado para:" << insertedValue;
-        if(ok && insertedValue<= 360 && insertedValue>=0){
+        if(ok && insertedValue<= sensorData.arrive_angle && insertedValue>=sensorData.start_angle){
         myDial->setValue(insertedValue);
         }
         else{
-            QMessageBox::critical(this, "Erro", "Insira o dado flutuante corretamente entre 0 a 360º");
+            QMessageBox::critical(this, "Erro", "Insira o dado flutuante corretamente entre os limites do modelo");
         }
-        /*
-        int value = myInsertDegree->
-        ui->actual_dial_degree->setText(QString::number(myDial->value())+"º");*/
+
     });
 
     connect(myDial, &QDial::sliderReleased, this, [this]() {
@@ -95,12 +99,17 @@ void MainWindow::by_animate_dial_button_action()
     double min = sensorData.start_angle;
     double max= sensorData.arrive_angle;
     qDebug() << "tela entrou";
-    for(double i=min;i<=max;i=i+0.1){
-        qDebug() << "Init" << min << "| Fim"  << max << "| posição do dial é:" << i ;
+    for(double i=min;i<=max+0.1;i=i+0.1){
+
+        qDebug() << "|" << min << "| -> |"  << max << "|     Posição do dial é:" << i ;
+
+        this->setServoAbsolutePosition(i);
+        myAnimate_progress_bar->setValue(i);
         myDial->setValue(i);
         QEventLoop loop;
         QTimer::singleShot(1, &loop, &QEventLoop::quit); // Pausa por 100ms
-        loop.exec();    }
+        loop.exec();
+    }
 
 }
 void MainWindow::on_actionAdicionar_triggered()
@@ -296,6 +305,8 @@ void MainWindow::updateSensorDependencies(SensorData *_sensorData) {
     ui->label_angle_end->setText(QString::number(this->sensorData.arrive_angle));
     ui->label_turn_direction->setText(this->sensorData.turn_direction);
     myDial->setValue(this->sensorData.start_angle);
+    myAnimate_progress_bar->setMinimum(this->sensorData.start_angle);
+    myAnimate_progress_bar->setMaximum(this->sensorData.arrive_angle);
 // Atualizar os dados do dial
 
 
@@ -320,6 +331,11 @@ void MainWindow::configDial(QDial *_myDial){
 
 }
 //  -------------- setters e getters para os dados da main --------------
+
+void MainWindow::setServoAbsolutePosition(double _value){
+
+    // definir o envio do pacote, ver se foi um sucesso e possivelmente enviar um não void para verificação
+}
 
 void MainWindow::setSensorData(SensorData _data)
 {
