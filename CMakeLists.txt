@@ -12,6 +12,15 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Widgets)
 find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Widgets)
 
+# Find Boost
+find_package(Boost REQUIRED COMPONENTS system filesystem thread)  # Adjust components as needed
+if(Boost_FOUND)
+    include_directories(${Boost_INCLUDE_DIRS})
+    link_directories(${Boost_LIBRARY_DIRS})
+else()
+    message(FATAL_ERROR "Boost library not found!")
+endif()
+
 set(PROJECT_SOURCES
         main.cpp
         mainwindow.cpp
@@ -31,7 +40,11 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
 
         datatypes.h
 
-
+        # Adicionar arquivos do minas_src
+        minas_src/ethercat_manager.h minas_src/ethercat_manager.cpp
+        minas_src/minas_app.h minas_src/minas_app.cpp
+        minas_src/minas_client.h minas_src/minas_client.cpp
+        minas_src/time_stamp.h minas_src/time_stamp.cpp
 
     )
 # Define target 2perties for Android with Qt 6 as:
@@ -52,7 +65,19 @@ else()
     endif()
 endif()
 
-target_link_libraries(QTMaat PRIVATE Qt${QT_VERSION_MAJOR}::Widgets)
+target_link_libraries(QTMaat
+    PRIVATE Qt${QT_VERSION_MAJOR}::Widgets
+    PRIVATE ${Boost_LIBRARIES}       # Link Boost libraries
+    PRIVATE ${CMAKE_SOURCE_DIR}/lib/libsoem.a  # Link custom static library
+)
+# Incluir diretórios adicionais (include e minas_src)
+include_directories(
+    ${CMAKE_SOURCE_DIR}/include
+    ${CMAKE_SOURCE_DIR}/minas_src
+)
+# Adicionar a biblioteca estática do diretório lib
+set(LIBRARY_PATH ${CMAKE_SOURCE_DIR}/lib)
+target_link_libraries(QTMaat PRIVATE ${LIBRARY_PATH}/libsoem.a)
 
 # Qt for iOS sets MACOSX_BUNDLE_GUI_IDENTIFIER automatically since Qt 6.1.
 # If you are developing for iOS or macOS you should consider setting an

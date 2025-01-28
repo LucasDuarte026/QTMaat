@@ -99,7 +99,7 @@ void MainWindow::by_animate_dial_button_action()
     double min = sensorData.start_angle;
     double max= sensorData.arrive_angle;
     qDebug() << "tela entrou";
-    for(double i=min;i<=max+0.1;i=i+0.1){
+    for(double i=min;i<=max;i=i+0.1){
 
         qDebug() << "|" << min << "| -> |"  << max << "|     Posição do dial é:" << i ;
 
