@@ -37,6 +37,7 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
         addsensordialog.h addsensordialog.cpp
         removesensordialog.h removesensordialog.cpp
         viewsensorsdialog.h viewsensorsdialog.cpp
+        servominas.h servominas.cpp
 
         datatypes.h
 
@@ -45,6 +46,10 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
         minas_src/minas_app.h minas_src/minas_app.cpp
         minas_src/minas_client.h minas_src/minas_client.cpp
         minas_src/time_stamp.h minas_src/time_stamp.cpp
+
+        logservowindow.h logservowindow.cpp
+
+
 
     )
 # Define target 2perties for Android with Qt 6 as:

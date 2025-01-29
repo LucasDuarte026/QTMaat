@@ -14,9 +14,15 @@ MainWindow::MainWindow(QWidget *parent)
     , sensorWindow(nullptr)  // Inicializa o ponteiro como nullptr
     , sensorData{"Modelo não selecionado",0.0,360.0,"Sem sentido"}
     , actual_servo_value(0.0)
+    , myServo(nullptr)        // ponteiro para a classe que controla o servo
+    , logServoWindow(nullptr) // ponteiro para a janela de log dentro da mainWindow
+
+    , servoUP(false)          // bool que comunica o estado do servo (se está apto a ser usado)
+
 {
 // config section
     ui->setupUi(this); // configurar e iniciar os elementos definidos em UI
+    setWindowTitle("Ma'at");
 
     myDial = ui->dial_elements->findChild<QDial*>("plan_dial"); // usando o dial criado no UI
     myInsertDegree = ui->degreeInsertDial;
@@ -27,9 +33,9 @@ MainWindow::MainWindow(QWidget *parent)
     if(myDial){
         configDial(myDial);
     }
-
-// seção das configurações
-
+    logServoWindow = new LogServoWindow(ui->log_screen, ui->search_line_log,
+                                        ui->clean_log_button, ui->search_log_button, this);
+    myServo = new ServoMinas("enp2s0"); // enp2s0 para linux. eth0 para windows
 
 // seção das conexões
     //  Quando o sensor é selecionado, deve se mudar as variaveis privadas de mainWindow
@@ -38,9 +44,10 @@ MainWindow::MainWindow(QWidget *parent)
 
     // inicializar a imagem
 
-    QPixmap pixmap2(":/images/resources/green_cicle.png");  // // trocar pela imagem do green circle
-    ui->label_greenCircle->setPixmap(pixmap2);
+    // QPixmap pixmap2(":/images/resources/green_cicle.png");  // // trocar pela imagem do green circle
+    // ui->label_greenCircle->setPixmap(pixmap2);
 
+    connect(ui->init_servo_button, &QPushButton::clicked, myServo, &ServoMinas::initialize);
     connect(ui->sensorSelected, &QPushButton::clicked, this, &MainWindow::by_sensorSelected_action);
     connect(ui->animate_dial_button, &QPushButton::clicked, this, &MainWindow::by_animate_dial_button_action);
 
@@ -73,6 +80,13 @@ MainWindow::MainWindow(QWidget *parent)
             myDial->setValue(max);
 
     });
+    // ui->enable_servo_communication->
+    // Connect checkbox toggle to the MainWindow signal
+    connect(ui->enable_servo_communication, &QCheckBox::toggled, this, &MainWindow::servoCommunicationBox_stateChanged);
+
+    // Connect ServoMinas logMessage signal to Log Window append function
+    connect(myServo, &ServoMinas::logMessage, logServoWindow, &LogServoWindow::appendLog);
+    connect(myServo, &ServoMinas::state, this, &MainWindow::servoState);
 
 }
 
@@ -326,10 +340,39 @@ void MainWindow::configDial(QDial *_myDial){
     _myDial->setNotchTarget(3.7);
     _myDial->setWrapping(true); // Definir comportamento de wrapping
     _myDial->setSingleStep(1);
-    _myDial->setValue(50);
+    _myDial->setValue(this->sensorData.start_angle);
 
 
 }
+
+void MainWindow::servoState(bool servoSituation){
+
+    servoUP=servoSituation;
+    if(servoUP){
+        qDebug() << " -> Servo conectado e pronto para inicializar operações\n";
+    }
+    else
+    {
+        qDebug() << " -> Servo desconectado\n";
+    }
+}
+
+
+void MainWindow::servoCommunicationBox_stateChanged(bool toogled){
+
+    if(servoUP)
+    {
+        // myServo->updateCommunicationState(toogled);
+    }
+    else{
+        QMessageBox::critical(this, "Erro", "Servo não conectado");
+        ui->enable_servo_communication->blockSignals(true);
+        ui->enable_servo_communication->setChecked(false);
+        ui->enable_servo_communication->blockSignals(false);
+    }
+}
+
+
 //  -------------- setters e getters para os dados da main --------------
 
 void MainWindow::setServoAbsolutePosition(double _value){

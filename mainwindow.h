@@ -9,8 +9,8 @@
 #include <QDoubleSpinBox>
 #include "sensorselectionwindow.h"
 #include "datatypes.h"
-
-
+#include "servominas.h"
+#include "logservowindow.h"
 
 namespace Ui {
 class MainWindow;
@@ -28,6 +28,8 @@ public:
     double getArriveAngle();
     QString getTurnDirection();
 
+signals:
+    void servoCheckBoxChanged(bool checked);    // Enviar o sinal geral que a caixa de habilitação de comunicação com o servo foi mudada de estado
 
 private slots:
     void updateSensorDependencies(SensorData *_sensorData);
@@ -37,9 +39,8 @@ private slots:
     void on_actionVer_sensores_triggered();
     void by_animate_dial_button_action();
     void setSensorData(SensorData _data);
-
-
-
+    void servoCommunicationBox_stateChanged(bool checked);
+    void servoState(bool servoSituation);
 
 private:
     Ui::MainWindow *ui;
@@ -49,8 +50,12 @@ private:
     QLineEdit *myInsertDegree;
     SensorSelectionWindow *sensorWindow;
     SensorData sensorData;
-    double actual_servo_value;
+    LogServoWindow *logServoWindow;
 
+    ServoMinas *myServo;
+
+    double actual_servo_value;
+    bool servoUP;
     void setServoAbsolutePosition(double _value);
     void configDial(QDial *_myDial);
 
