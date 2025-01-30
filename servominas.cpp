@@ -298,9 +298,17 @@ void ServoMinas::updateCommunicationState(bool checked) {
     isCommunicationEnabled = checked;
     if (isCommunicationEnabled) {
         qDebug() << "Servo habilitado. Executando ações...";
-        emit logMessage("✅ Servo habilitado para comunicação com o servo.");
+        emit logMessage(" ✅ Servo habilitado para comunicação com o servo.");
     } else {
         qDebug() << "Servo desabilitado. Apenas logando...";
-        emit logMessage("⚠️ Servo desabilitado. Nenhuma ação será realizada.");
+        emit logMessage(" ❌ Servo desabilitado. Nenhuma ação será realizada.");
     }
 }
+
+
+
+// ---- ---- ---- ---- ---- Setters and Getters ---- ---- ---- ---- ----
+
+void ServoMinas::setActualPosition(uint32_t value){    this->actual_position = value;     }
+
+uint32_t ServoMinas::getActualPosition()          {    return this->actual_position;      }

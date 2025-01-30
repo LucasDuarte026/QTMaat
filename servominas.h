@@ -24,6 +24,9 @@ public:
     void disableServo(); // Desabilita o servo
     void resetErrors(); // Reseta os erros no servo
     void moveToHome(); // Move to home position
+    void setActualPosition(uint32_t value);
+    uint32_t getActualPosition();
+
 
 public slots:
     void updateCommunicationState(bool checked);
@@ -40,8 +43,8 @@ private:
     minas_control::MinasOutput output;
     minas_control::MinasInput input;
 
+    uint32_t actual_position;
     bool isCommunicationEnabled;
-
     void configureSafetyLimits(); // Configura os limites de segurança do servo
     bool debugOperation(int durationMs);
 };

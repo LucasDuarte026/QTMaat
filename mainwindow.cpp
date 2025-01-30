@@ -12,7 +12,7 @@ MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
     , sensorWindow(nullptr)  // Inicializa o ponteiro como nullptr
-    , sensorData{"Modelo não selecionado",0.0,360.0,"Sem sentido"}
+    , sensorData{"Modelo não selecionado",0.0,360.0,"CW"}
     , actual_servo_value(0.0)
     , myServo(nullptr)        // ponteiro para a classe que controla o servo
     , logServoWindow(nullptr) // ponteiro para a janela de log dentro da mainWindow
@@ -160,22 +160,48 @@ void MainWindow::by_sensorSelected_action()
 }
 void MainWindow::by_animate_dial_button_action()
 {
-    double min = sensorData.start_angle;
-    double max= sensorData.arrive_angle;
-    qDebug() << "tela entrou";
-    for(double i=min;i<=max;i=i+0.1){
+    if(sensorData.turn_direction =="CW")
+    {
+        double min = sensorData.start_angle;
+        double max= sensorData.arrive_angle;
+        double real_angle;
+        qDebug() << "Simulação de operação iniciada";
+        for(int i=10*min;i<=10*max;i++){
 
-        qDebug() << "|" << min << "| -> |"  << max << "|     Posição do dial é:" << i ;
-
-        this->setServoAbsolutePosition(i);
-        myAnimate_progress_bar->setValue(i);
-        myDial->setValue(i);
-        QEventLoop loop;
-        QTimer::singleShot(1, &loop, &QEventLoop::quit); // Pausa por 100ms
-        loop.exec();
+            real_angle=double(i)/10;
+            qDebug() << "|" << min << "| -> |"  << max << "|     Posição do dial é:" << real_angle ;
+            this->setServoAbsolutePosition(real_angle);
+            myAnimate_progress_bar->setValue(real_angle);
+            myDial->setValue(real_angle);
+            QEventLoop loop;
+            QTimer::singleShot(1, &loop, &QEventLoop::quit); // Pausa por 100ms
+            loop.exec();
+        }
     }
+    else if(sensorData.turn_direction =="CCW")
+    {
+        double min = sensorData.start_angle;
+        double max= sensorData.arrive_angle;
+        double real_angle;
+        qDebug() << "Simulação de operação iniciada";
+        for(int i=10*max;i>=10*min;i--){
+
+            real_angle=double(i)/10;
+            qDebug() << "|" << max << "| -> |"  << min<< "|     Posição do dial é:" << real_angle ;
+            this->setServoAbsolutePosition(real_angle);
+            myAnimate_progress_bar->setValue(real_angle);
+            myDial->setValue(real_angle);
+            QEventLoop loop;
+            QTimer::singleShot(1, &loop, &QEventLoop::quit); // Pausa por 100ms
+            loop.exec();
+        }
+    }
+    else
+        QMessageBox::critical(this, "Erro", "Direção de giro do modelo inserido incorreta\nDeve ser:   'CW' ou 'CCW'");
 
 }
+
+
 void MainWindow::on_actionAdicionar_triggered()
 {
     // Caminho do arquivo CSV no diretório raiz do projeto
@@ -410,6 +436,8 @@ void MainWindow::servoState(bool servoSituation){
 
 
 void MainWindow::servoCommunicationBox_stateChanged(bool toogled){
+
+    ui->animate_dial_button->setEnabled(!toogled);
 
     if(servoUP)
     {
