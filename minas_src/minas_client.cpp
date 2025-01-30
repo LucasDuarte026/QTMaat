@@ -164,7 +164,7 @@ namespace minas_control
         printPDSStatus(input);
         MinasOutput output;
         memset(&output, 0x00, sizeof(MinasOutput));
-        output.operation_mode = mode; // pp (profile position mode)
+        output.operation_mode = mode;
         int loop = 0;
         while (getPDSStatus(input) != OPERATION_ENABLED)
         {

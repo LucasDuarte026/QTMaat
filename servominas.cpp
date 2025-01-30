@@ -1,3 +1,4 @@
+#include <iostream>
 #include "servominas.h"
 #include <cstring> // Para memset
 #include <QDebug>
@@ -40,6 +41,7 @@ void ServoMinas::initialize() {
         resetErrors();
         configureSafetyLimits();
 
+
         message = "ServoMinas inicializado com sucesso. ";
         emit logMessage(message);
         qDebug() << message ;
@@ -63,6 +65,9 @@ void ServoMinas::enableServo(int mode) {
     if (client) {
         try{
             client->servoOn(mode);
+            client->setProfileVelocity(0x16000000);
+            client->setProfileAcceleration(0x80000000);
+            client->setProfileDeceleration(0x80000000);
 
             QString name_mode;
             if (mode == 0x01) {
@@ -74,6 +79,8 @@ void ServoMinas::enableServo(int mode) {
 
             }
             message = QString("Servo habilitado no modo %1|%2").arg(mode).arg(name_mode);
+            // configurar as acelerações e velocidades de perfil. Não alterar
+
         }
 
         catch(const QException &e){
@@ -93,6 +100,10 @@ void ServoMinas::enableServo(int mode) {
 void ServoMinas::disableServo() {
     QString message;
     if (client) {
+
+        minas_control::MinasInput input = client->readInputs();
+        client->printPDSStatus(input);
+        client->printPDSOperation(input);
         client->servoOff();
         message =  "Servo desabilitado.";
     } else {
@@ -135,15 +146,74 @@ void ServoMinas::configureSafetyLimits() {
 }
 
 
+bool ServoMinas::debugOperation(int durationMs) {
+    if (!client || !isCommunicationEnabled) {
+        emit logMessage("Cliente não inicializado ou comunicação desabilitada.");
+        return false;
+    }
+
+    quint64 start_time = QDateTime::currentMSecsSinceEpoch();
+    quint64 end_time = start_time + durationMs;
+
+    // Send the command to your device *before* starting the observation
+    // This part depends on how you send commands.  Examples:
+    // client->sendCommand(yourCommand);  // If you have a sendCommand method
+    // Or write directly to registers:
+    // client->writeOutputs(yourOutputStructure);
+
+
+    while (QDateTime::currentMSecsSinceEpoch() < end_time) {
+        minas_control::MinasInput input = client->readInputs();
+        minas_control::MinasOutput output = client->readOutputs();
+
+        if ((QDateTime::currentMSecsSinceEpoch() - start_time) % 40 == 0) { // Log every 40ms
+            std::cout << "err = " << std::hex << std::setw(4) << std::setfill('0') << input.error_code
+                      << ", ctrl = " << std::hex << std::setw(4) << std::setfill('0') << output.controlword
+                      << ", status = " << std::hex << std::setw(4) << std::setfill('0') << input.statusword
+                      << ", op_mode = " << std::dec << input.operation_mode
+                      << ", pos = " << std::hex << std::setw(8) << std::setfill('0') << input.position_actual_value
+                      << ", vel = " << std::hex << std::setw(8) << std::setfill('0') << input.velocity_actual_value
+                      << ", tor = " << std::hex << std::setw(8) << std::setfill('0') << input.torque_actual_value
+                      << " -> Tempo decorrido: " << std::dec << (QDateTime::currentMSecsSinceEpoch() - start_time) << " ms" << std::endl;
+
+            std::cout << "Raw 6060h (decimal): " << output.operation_mode << std::endl;
+            std::cout << "Raw 6061h (decimal): " << input.operation_mode << std::endl;
+
+            std::cout << "Input:" << std::endl;
+            std::cout << " 603Fh " << std::hex << std::setw(8) << std::setfill('0') << input.error_code << ":Error code" << std::endl;
+            std::cout << " 6041h " << std::hex << std::setw(8) << std::setfill('0') << input.statusword << ":Statusword" << std::endl;
+            std::cout << " 6061h " << std::hex << std::setw(8) << std::setfill('0') << input.operation_mode << ":Modes of operation display" << std::endl;
+            std::cout << " 6064h " << std::hex << std::setw(8) << std::setfill('0') << input.position_actual_value << ":Position actual value" << std::endl;
+            std::cout << " 606Ch " << std::hex << std::setw(8) << std::setfill('0') << input.velocity_actual_value << ":Velocity actual value" << std::endl;
+            std::cout << " 6077h " << std::hex << std::setw(8) << std::setfill('0') << input.torque_actual_value << ":Torque actual value" << std::endl;
+            std::cout << " 60B9h " << std::hex << std::setw(8) << std::setfill('0') << input.touch_probe_status << ":Touch probe status" << std::endl;
+            std::cout << " 60BAh " << std::hex << std::setw(8) << std::setfill('0') << input.touch_probe_posl_pos_value << ":Touch probe pos1 pos value" << std::endl;
+            std::cout << " 60FDh " << std::hex << std::setw(8) << std::setfill('0') << input.digital_inputs << ":Digital inputs" << std::endl;
+
+            std::cout << "Output:" << std::endl;
+            std::cout << " 6040h " << std::hex << std::setw(8) << std::setfill('0') << output.controlword << ":Controlword" << std::endl;
+            std::cout << " 6060h " << std::hex << std::setw(8) << std::setfill('0') << output.operation_mode << ":Mode of operation" << std::endl;
+            std::cout << " 6071h " << std::hex << std::setw(8) << std::setfill('0') << output.target_torque << ":Target Torque" << std::endl;
+            std::cout << " 6072h " << std::hex << std::setw(8) << std::setfill('0') << output.max_torque << ":Max Torque" << std::endl;
+            std::cout << " 607Ah " << std::hex << std::setw(8) << std::setfill('0') << output.target_position << ":Target Position" << std::endl;
+            std::cout << " 6080h " << std::hex << std::setw(8) << std::setfill('0') << output.max_motor_speed << ":Max motor speed" << std::endl;
+            std::cout << " 60B8h " << std::hex << std::setw(8) << std::setfill('0') << output.touch_probe_function << ":Touch Probe function" << std::endl;
+            std::cout << " 60FFh " << std::hex << std::setw(8) << std::setfill('0') << output.target_velocity << ":Target Velocity" << std::endl;
+            std::cout << " 60B0h " << std::hex << std::setw(8) << std::setfill('0') << output.position_offset << ":Position Offset" << std::endl;
+        }
+
+        QCoreApplication::processEvents(); // manter a aplicação rodando
+    }
+
+    emit logMessage("Observação concluída.");
+    return true;
+}
+
 void ServoMinas::moveToHome() {
     QString message;
     if (client) {
         if (isCommunicationEnabled) {
             enableServo(0x06);
-            output.controlword = 0x001f; // Procurar as definições de controlWord para os métodos pp e hm (são diferentes para cada)
-
-            output.operation_mode = 0x06; // definide de fato o modo de operação para a escrita
-
             client->setSwitchSpeed(8000000);
             client->setZeroSpeed(8000000);
             client->setHomingAcceleration(33554432);
@@ -154,6 +224,12 @@ void ServoMinas::moveToHome() {
             client->setHomingReturnSpeedLimit(20000);
             client->setHomingMode(34);  // (On Index Pulse +Ve direction)
             client->setTouchProbe(7);
+
+            memset(&output, 0x00, sizeof(minas_control::MinasOutput));
+            output.target_torque = 500;
+            output.max_torque = 500;
+            output.controlword = 0x001F;
+            output.operation_mode = 0x06; // definide de fato o modo de operação para a escrita
 
             client->writeOutputs(output);
 
@@ -172,61 +248,9 @@ void ServoMinas::moveToHome() {
     emit logMessage(message);
     qDebug() << message;
 
-    QElapsedTimer timer;
-    timer.start();
 
-    qDebug() << "\n\t->\tAcompanhar operação\n";
-    int period = 1000000; // Define period INSIDE moveToHome (1ms = 1,000,000 ns)
-    for (int i = 0; i <= 2000; i++) {
-        minas_control::MinasInput input = client->readInputs();
-        minas_control::MinasOutput output = client->readOutputs();
+    // bool success = debugOperation(4000);
 
-        if (i % 10 == 0) {
-            qDebug() << "err =" << QString::number(input.error_code, 16).rightJustified(4, '0')
-            << ", ctrl" << QString::number(output.controlword, 16).rightJustified(4, '0')
-            << ", status" << QString::number(input.statusword, 16).rightJustified(4, '0')
-            << ", op_mode =" << input.operation_mode
-            << ", pos =" << QString::number(input.position_actual_value, 16).rightJustified(8, '0')
-            << ", vel =" << QString::number(input.velocity_actual_value, 16).rightJustified(8, '0')
-            << ", tor =" << QString::number(input.torque_actual_value, 16).rightJustified(8, '0');
-
-            // if (input.statusword & 0x0400) { // target reached (bit 10)
-            //     qDebug() << "target reached";
-            //     break;
-            // }
-
-            qDebug() << "Elapsed time (ms): " << timer.elapsed();
-
-            qDebug() << "Input:";
-            qDebug() << " 603Fh" << QString::number(input.error_code, 16).rightJustified(8, '0') << ":Error code";
-            qDebug() << " 6041h" << QString::number(input.statusword, 16).rightJustified(8, '0') << ":Statusword";
-            qDebug() << " 6061h" << QString::number(input.operation_mode, 16).rightJustified(8, '0') << ":Modes of operation display";
-            qDebug() << " 6064h" << QString::number(input.position_actual_value, 16).rightJustified(8, '0') << ":Position actual value";
-            qDebug() << " 606Ch" << QString::number(input.velocity_actual_value, 16).rightJustified(8, '0') << ":Velocity actual value";
-            qDebug() << " 6077h" << QString::number(input.torque_actual_value, 16).rightJustified(8, '0') << ":Torque actual value";
-            qDebug() << " 60B9h" << QString::number(input.touch_probe_status, 16).rightJustified(8, '0') << ":Touch probe status";
-            qDebug() << " 60BAh" << QString::number(input.touch_probe_posl_pos_value, 16).rightJustified(8, '0') << ":Touch probe pos1 pos value";
-            qDebug() << " 60FDh" << QString::number(input.digital_inputs, 16).rightJustified(8, '0') << ":Digital inputs";
-
-            qDebug() << "Output:";
-            qDebug() << " 6040h" << QString::number(output.controlword, 16).rightJustified(8, '0') << ":Controlword";
-            qDebug() << " 6060h" << QString::number(output.operation_mode, 16).rightJustified(8, '0') << ":Mode of operation";
-            qDebug() << " 6071h" << QString::number(output.target_torque, 16).rightJustified(8, '0') << ":Target Torque";
-            qDebug() << " 6072h" << QString::number(output.max_torque, 16).rightJustified(8, '0') << ":Max Torque";
-            qDebug() << " 607Ah" << QString::number(output.target_position, 16).rightJustified(8, '0') << ":Target Position";
-            qDebug() << " 6080h" << QString::number(output.max_motor_speed, 16).rightJustified(8, '0') << ":Max motor speed";
-            qDebug() << " 60B8h" << QString::number(output.touch_probe_function, 16).rightJustified(8, '0') << ":Touch Probe function";
-            qDebug() << " 60FFh" << QString::number(output.target_velocity, 16).rightJustified(8, '0') << ":Target Velocity";
-            qDebug() << " 60B0h" << QString::number(output.position_offset, 16).rightJustified(8, '0') << ":Position Offset";
-        }
-
-
-        while (timer.elapsed() * 1000 < period) {
-            QCoreApplication::processEvents();
-        }
-        timer.restart();
-
-    }
 }
 
 void ServoMinas::moveAbsoluteTo(double position, double velocity) {
@@ -248,12 +272,18 @@ void ServoMinas::moveAbsoluteTo(double position, double velocity) {
             input = client->readInputs();
         } while (!(input.statusword & 0x0400));
 
-        message =  QString("Movimento completo. Posição atual:").arg(input.position_actual_value);
+        message =  QString("Movimento completo. Posição atual: %1").arg(input.position_actual_value);
     } else {
         message =  "Cliente não inicializado. Não é possível mover para a posição absoluta.";
     }
     emit logMessage(message);
     qDebug() << message;
+    bool success = debugOperation(4000);
+    if(success)
+        emit logMessage("Operação de movimentação absoluta para " + QString::number(position) + "foi um sucesso");
+    else
+        emit logMessage("Operação de movimentação absoluta para " + QString::number(position) + "fracassou");
+
 }
 
 void ServoMinas::updateCommunicationState(bool checked) {

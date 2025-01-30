@@ -7,7 +7,6 @@
 #include <QProgressBar>
 #include <QTimer>
 #include <QDoubleSpinBox>
-#include <QTimer>
 #include "sensorselectionwindow.h"
 #include "datatypes.h"
 #include "servominas.h"
@@ -47,10 +46,13 @@ private slots:
     void setSensorData(SensorData _data);
     void servoCommunicationBox_stateChanged(bool checked);
     void servoState(bool servoSituation);
-    void startInitTimer();
-    void initTimeout();
+    void stopOperation();
+    void initializeServo();
     void startHoming ();
     void clearServoErrors();
+    void insertedAngleToAchieve();
+
+
 private:
     Ui::MainWindow *ui;
     QDial *myDial;
@@ -61,7 +63,6 @@ private:
     SensorData sensorData;
     LogServoWindow *logServoWindow;
     LogHandler * logHandler;
-    QTimer *initTimer;
 
 
     ServoMinas *myServo;

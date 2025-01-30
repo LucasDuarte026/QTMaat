@@ -18,7 +18,6 @@ MainWindow::MainWindow(QWidget *parent)
     , logServoWindow(nullptr) // ponteiro para a janela de log dentro da mainWindow
     , timerState(true)
     , servoUP(false)          // bool que comunica o estado do servo (se está apto a ser usado)
-    , initTimer(new QTimer(this)) // timer para controle dos botões
 
 {
 // config section
@@ -78,19 +77,7 @@ MainWindow::MainWindow(QWidget *parent)
         ui->actual_dial_degree->setText(QString::number(this->actual_servo_value,'f',4)+"º");
 
     });
-    connect(myInsertDegree, &QLineEdit::returnPressed, this, [this](){
-        bool ok;
-        double insertedValue = myInsertDegree->text().toDouble(&ok);
-        qDebug() << "Valor alterado para:" << insertedValue;
-        if(ok && insertedValue<= sensorData.arrive_angle && insertedValue>=sensorData.start_angle){
-        myDial->setValue(insertedValue);
-        }
-        else{
-            QMessageBox::critical(this, "Erro", "Insira o dado flutuante corretamente entre os limites do modelo");
-        }
-
-    });
-
+    connect(myInsertDegree, &QLineEdit::returnPressed, this, &MainWindow::insertedAngleToAchieve);
 
 // botões de limpeza e de filtro da aba de logs gerais
 
@@ -143,9 +130,8 @@ MainWindow::MainWindow(QWidget *parent)
     connect(myServo, &ServoMinas::state, this, &MainWindow::servoState);
 
     // conexões do timer de ligar e desligar o servo:
-    connect(ui->init_servo_button, &QPushButton::clicked, this, &MainWindow::startInitTimer);
-    connect(ui->disable_servo_button, &QPushButton::clicked, this, &MainWindow::startInitTimer);
-    connect(initTimer, &QTimer::timeout, this, &MainWindow::initTimeout);
+    connect(ui->init_servo_button, &QPushButton::clicked, this, &MainWindow::initializeServo);
+    connect(ui->disable_servo_button, &QPushButton::clicked, this, &MainWindow::stopOperation);
 
     // Operações no servo
     connect(ui->homing_button, &QPushButton::clicked, this, &MainWindow::startHoming);
@@ -437,38 +423,23 @@ void MainWindow::servoCommunicationBox_stateChanged(bool toogled){
     }
 }
 
-void MainWindow::startInitTimer()
+void MainWindow::initializeServo()
 {
+    myServo->initialize(); // Inicializar o servo
+    qDebug()<< "Servo Habilitado";
+    ui->init_servo_button->setEnabled(false);
+    ui->disable_servo_button->setEnabled(true);
 
-    if(timerState){
-        ui->init_servo_button->setEnabled(false);
-        ui->disable_servo_button->setEnabled(false);
-        myServo->initialize(); // Inicializar o servo
-        qDebug()<< "Servo Habilitado";
-    }
-    else{
-        ui->init_servo_button->setEnabled(false);
-        ui->disable_servo_button->setEnabled(false);
-        myServo->disableServo(); // Desabilitar o servo
-        qDebug()<< "Servo desabilitado";
-    }
-    initTimer->start(10000); //timer de 10 segundos
 }
 
-void MainWindow::initTimeout(){
-    initTimer->stop();
 
-    if(timerState)
-    {
-        ui->disable_servo_button->setEnabled(true);
-        timerState = false;
-    }
-    else
-    {
-        ui->init_servo_button->setEnabled(true);
-        timerState = true;
-    }
+
+void MainWindow::stopOperation(){
+
+    myServo->disableServo(); // Desabilitar o servo
+    qDebug()<< "Operação parada";
 }
+
 
 
 
@@ -479,6 +450,20 @@ void MainWindow::startHoming(){
 }
 
 
+void MainWindow::insertedAngleToAchieve(){
+    bool ok;
+    double insertedValue = myInsertDegree->text().toDouble(&ok);
+    qDebug() << "Valor alterado para:" << insertedValue;
+
+    if(ok && insertedValue<= sensorData.arrive_angle && insertedValue>=sensorData.start_angle){
+        myServo->moveAbsoluteTo(insertedValue,500);
+        myDial->setValue(insertedValue);
+    }
+    else{
+        QMessageBox::critical(this, "Erro", "Insira o dado flutuante corretamente entre os limites do modelo");
+    }
+
+}
 
 void MainWindow::clearServoErrors(){
 

@@ -2,6 +2,8 @@
 #define SERVOMINAS_H
 
 #include <QObject>
+#include <QTimer>
+#include <QDateTime>
 #include <QElapsedTimer>
 #include <QCoreApplication>
 #include <QException>
@@ -41,6 +43,7 @@ private:
     bool isCommunicationEnabled;
 
     void configureSafetyLimits(); // Configura os limites de segurança do servo
+    bool debugOperation(int durationMs);
 };
 
 #endif // SERVOMINAS_H
