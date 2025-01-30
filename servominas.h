@@ -2,6 +2,9 @@
 #define SERVOMINAS_H
 
 #include <QObject>
+#include <QElapsedTimer>
+#include <QCoreApplication>
+#include <QException>
 #include "ethercat_manager.h"
 #include "minas_client.h"
 
@@ -35,7 +38,7 @@ private:
     minas_control::MinasOutput output;
     minas_control::MinasInput input;
 
-    bool isEnabled;
+    bool isCommunicationEnabled;
 
     void configureSafetyLimits(); // Configura os limites de segurança do servo
 };

@@ -48,6 +48,7 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
         minas_src/time_stamp.h minas_src/time_stamp.cpp
 
         logservowindow.h logservowindow.cpp
+        loghandler.h loghandler.cpp
 
 
 

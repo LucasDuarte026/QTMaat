@@ -16,13 +16,34 @@ MainWindow::MainWindow(QWidget *parent)
     , actual_servo_value(0.0)
     , myServo(nullptr)        // ponteiro para a classe que controla o servo
     , logServoWindow(nullptr) // ponteiro para a janela de log dentro da mainWindow
-
+    , timerState(true)
     , servoUP(false)          // bool que comunica o estado do servo (se está apto a ser usado)
+    , initTimer(new QTimer(this)) // timer para controle dos botões
 
 {
 // config section
     ui->setupUi(this); // configurar e iniciar os elementos definidos em UI
     setWindowTitle("Ma'at");
+
+    /* Verificar se o menu voltou a funcionar
+        // Configuração da barra de menu para Linux
+        ui->menubar->setVisible(true);
+        ui->menubar->setEnabled(true);
+        ui->menubar->setNativeMenuBar(false);
+
+        // Garante que os menus estão habilitados e configurados
+        ui->menuFile->setEnabled(true);
+        ui->menuSensor->setEnabled(true);
+
+        // Configura o comportamento dos menus para Linux
+        menuBar()->setDefaultUp(true); // Força os menus a abrirem para cima
+        ui->menuFile->setSeparatorsCollapsible(false);
+        ui->menuSensor->setSeparatorsCollapsible(false);
+
+        // Conecta os eventos de hover dos menus
+        ui->menuFile->installEventFilter(this);
+        ui->menuSensor->installEventFilter(this);
+    */
 
     myDial = ui->dial_elements->findChild<QDial*>("plan_dial"); // usando o dial criado no UI
     myInsertDegree = ui->degreeInsertDial;
@@ -33,6 +54,8 @@ MainWindow::MainWindow(QWidget *parent)
     if(myDial){
         configDial(myDial);
     }
+
+    logHandler = new LogHandler(ui->general_log_screen, this);
     logServoWindow = new LogServoWindow(ui->log_screen, ui->search_line_log,
                                         ui->clean_log_button, ui->search_log_button, this);
     myServo = new ServoMinas("enp2s0"); // enp2s0 para linux. eth0 para windows
@@ -47,7 +70,6 @@ MainWindow::MainWindow(QWidget *parent)
     // QPixmap pixmap2(":/images/resources/green_cicle.png");  // // trocar pela imagem do green circle
     // ui->label_greenCircle->setPixmap(pixmap2);
 
-    connect(ui->init_servo_button, &QPushButton::clicked, myServo, &ServoMinas::initialize);
     connect(ui->sensorSelected, &QPushButton::clicked, this, &MainWindow::by_sensorSelected_action);
     connect(ui->animate_dial_button, &QPushButton::clicked, this, &MainWindow::by_animate_dial_button_action);
 
@@ -69,6 +91,34 @@ MainWindow::MainWindow(QWidget *parent)
 
     });
 
+
+// botões de limpeza e de filtro da aba de logs gerais
+
+    // Conectar botão de buscar ao filtro da aba general_log_screen
+    connect(ui->general_log_search_button, &QPushButton::clicked, this, [this]() {
+        QString searchText = ui->general_log_text_edit->text().trimmed();
+
+        if (!searchText.isEmpty()) {
+            QString logContent = ui->general_log_screen->toPlainText();
+            QStringList lines = logContent.split("\n");
+
+            QStringList filteredLines;
+            for (const QString &line : lines) {
+                if (line.contains(searchText, Qt::CaseInsensitive)) {
+                    filteredLines.append(line);
+                }
+            }
+
+            ui->general_log_screen->clear();
+            for (const QString &line : filteredLines) {
+                ui->general_log_screen->append(line);
+            }
+        }
+    });
+
+    // Conectar botão de limpar para apagar todo o log geral
+    connect(ui->clean_all_output, &QPushButton::clicked, ui->general_log_screen, &QTextEdit::clear);
+
     connect(myDial, &QDial::sliderReleased, this, [this]() {
         double min = sensorData.start_angle ;
         double max = sensorData.arrive_angle ;
@@ -80,13 +130,27 @@ MainWindow::MainWindow(QWidget *parent)
             myDial->setValue(max);
 
     });
-    // ui->enable_servo_communication->
+
+
+    // servo communication setup
+    ui->init_servo_button->setEnabled(true);
+    ui->disable_servo_button->setEnabled(false);
     // Connect checkbox toggle to the MainWindow signal
     connect(ui->enable_servo_communication, &QCheckBox::toggled, this, &MainWindow::servoCommunicationBox_stateChanged);
 
-    // Connect ServoMinas logMessage signal to Log Window append function
+    // Cconectar as operações de log do servo com a tela de log
     connect(myServo, &ServoMinas::logMessage, logServoWindow, &LogServoWindow::appendLog);
     connect(myServo, &ServoMinas::state, this, &MainWindow::servoState);
+
+    // conexões do timer de ligar e desligar o servo:
+    connect(ui->init_servo_button, &QPushButton::clicked, this, &MainWindow::startInitTimer);
+    connect(ui->disable_servo_button, &QPushButton::clicked, this, &MainWindow::startInitTimer);
+    connect(initTimer, &QTimer::timeout, this, &MainWindow::initTimeout);
+
+    // Operações no servo
+    connect(ui->homing_button, &QPushButton::clicked, this, &MainWindow::startHoming);
+    connect(ui->clear_errors, &QPushButton::clicked, this, &MainWindow::clearServoErrors);
+
 
 }
 
@@ -350,6 +414,7 @@ void MainWindow::servoState(bool servoSituation){
     servoUP=servoSituation;
     if(servoUP){
         qDebug() << " -> Servo conectado e pronto para inicializar operações\n";
+
     }
     else
     {
@@ -362,7 +427,7 @@ void MainWindow::servoCommunicationBox_stateChanged(bool toogled){
 
     if(servoUP)
     {
-        // myServo->updateCommunicationState(toogled);
+        myServo->updateCommunicationState(toogled);
     }
     else{
         QMessageBox::critical(this, "Erro", "Servo não conectado");
@@ -372,6 +437,53 @@ void MainWindow::servoCommunicationBox_stateChanged(bool toogled){
     }
 }
 
+void MainWindow::startInitTimer()
+{
+
+    if(timerState){
+        ui->init_servo_button->setEnabled(false);
+        ui->disable_servo_button->setEnabled(false);
+        myServo->initialize(); // Inicializar o servo
+        qDebug()<< "Servo Habilitado";
+    }
+    else{
+        ui->init_servo_button->setEnabled(false);
+        ui->disable_servo_button->setEnabled(false);
+        myServo->disableServo(); // Desabilitar o servo
+        qDebug()<< "Servo desabilitado";
+    }
+    initTimer->start(10000); //timer de 10 segundos
+}
+
+void MainWindow::initTimeout(){
+    initTimer->stop();
+
+    if(timerState)
+    {
+        ui->disable_servo_button->setEnabled(true);
+        timerState = false;
+    }
+    else
+    {
+        ui->init_servo_button->setEnabled(true);
+        timerState = true;
+    }
+}
+
+
+
+void MainWindow::startHoming(){
+
+    qDebug() << "inicializar o homing";
+    myServo->moveToHome();
+}
+
+
+
+void MainWindow::clearServoErrors(){
+
+    myServo->resetErrors();
+}
 
 //  -------------- setters e getters para os dados da main --------------
 
@@ -402,4 +514,16 @@ QString MainWindow::getTurnDirection()
     return this->sensorData.turn_direction ;
 }
 
-
+bool MainWindow::eventFilter(QObject *obj, QEvent *event)
+{
+    if (obj == ui->menuFile || obj == ui->menuSensor) {
+        if (event->type() == QEvent::Enter) {
+            QMenu *menu = qobject_cast<QMenu*>(obj);
+            if (menu && !menu->isVisible()) {
+                menu->popup(mapToGlobal(menuBar()->actionGeometry(menu->menuAction()).bottomLeft()));
+            }
+            return true;
+        }
+    }
+    return QMainWindow::eventFilter(obj, event);
+}

@@ -105,7 +105,7 @@
                <property name="text">
                 <string>Ângulo de chegada</string>
                </property>
-              </widget>
+             </widget>
              </item>
              <item>
               <widget class="QLabel" name="label_angle_end">
@@ -373,6 +373,27 @@
                   </widget>
                  </item>
                  <item>
+                  <widget class="QPushButton" name="disable_servo_button">
+                   <property name="text">
+                    <string>Desabilitar Servo Minas</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QPushButton" name="homing_button">
+                   <property name="text">
+                    <string>homing</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QPushButton" name="clear_errors">
+                   <property name="text">
+                    <string>Limpar erros</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
                   <widget class="QLabel" name="label_2">
                    <property name="text">
                     <string>TextLabel</string>
@@ -391,62 +412,126 @@
                  </property>
                  <layout class="QVBoxLayout" name="verticalLayout_9">
                   <item>
-                   <layout class="QHBoxLayout" name="horizontalLayout_10">
-                    <item>
-                     <layout class="QVBoxLayout" name="verticalLayout_8">
+                   <widget class="QTabWidget" name="log_tab">
+                    <property name="currentIndex">
+                     <number>1</number>
+                    </property>
+                    <widget class="QWidget" name="servo_output">
+                     <attribute name="title">
+                      <string>Servo log</string>
+                     </attribute>
+                     <layout class="QVBoxLayout" name="verticalLayout_10">
                       <item>
-                       <layout class="QHBoxLayout" name="horizontalLayout_11">
+                       <layout class="QVBoxLayout" name="verticalLayout_8">
                         <item>
-                         <widget class="QLineEdit" name="search_line_log">
-                          <property name="sizePolicy">
-                           <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
-                            <horstretch>0</horstretch>
-                            <verstretch>0</verstretch>
-                           </sizepolicy>
-                          </property>
-                          <property name="inputMask">
-                           <string/>
-                          </property>
-                          <property name="text">
-                           <string extracomment="wadwd">Buscar no log...</string>
-                          </property>
-                          <property name="echoMode">
-                           <enum>QLineEdit::EchoMode::Normal</enum>
-                          </property>
-                          <property name="cursorPosition">
-                           <number>16</number>
-                          </property>
-                         </widget>
+                         <layout class="QHBoxLayout" name="horizontalLayout_11">
+                          <item>
+                           <widget class="QLineEdit" name="search_line_log">
+                            <property name="sizePolicy">
+                             <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
+                              <horstretch>0</horstretch>
+                              <verstretch>0</verstretch>
+                             </sizepolicy>
+                            </property>
+                            <property name="inputMask">
+                             <string/>
+                            </property>
+                            <property name="text">
+                             <string extracomment="wadwd">Buscar no log do servo...</string>
+                            </property>
+                            <property name="echoMode">
+                             <enum>QLineEdit::EchoMode::Normal</enum>
+                            </property>
+                            <property name="cursorPosition">
+                             <number>25</number>
+                            </property>
+                           </widget>
+                          </item>
+                          <item>
+                           <widget class="QPushButton" name="search_log_button">
+                            <property name="text">
+                             <string>Buscar</string>
+                            </property>
+                           </widget>
+                          </item>
+                         </layout>
                         </item>
                         <item>
-                         <widget class="QPushButton" name="search_log_button">
+                         <layout class="QHBoxLayout" name="horizontalLayout_10">
+                          <item>
+                           <widget class="QTextEdit" name="log_screen"/>
+                          </item>
+                          <item>
+                           <widget class="QScrollBar" name="log_scroll_bar">
+                            <property name="orientation">
+                             <enum>Qt::Orientation::Vertical</enum>
+                            </property>
+                           </widget>
+                          </item>
+                         </layout>
+                        </item>
+                        <item alignment="Qt::AlignmentFlag::AlignLeft">
+                         <widget class="QPushButton" name="clean_log_button">
                           <property name="text">
-                           <string>Buscar</string>
+                           <string>Limpar log</string>
                           </property>
                          </widget>
                         </item>
                        </layout>
                       </item>
+                     </layout>
+                    </widget>
+                    <widget class="QWidget" name="general_output">
+                     <attribute name="title">
+                      <string>Saídas gerais</string>
+                     </attribute>
+                     <layout class="QVBoxLayout" name="verticalLayout_14">
                       <item>
-                       <widget class="QTextEdit" name="log_screen"/>
-                      </item>
-                      <item alignment="Qt::AlignmentFlag::AlignLeft">
-                       <widget class="QPushButton" name="clean_log_button">
-                        <property name="text">
-                         <string>Limpar log</string>
-                        </property>
-                       </widget>
+                       <layout class="QVBoxLayout" name="verticalLayout_13">
+                        <item>
+                         <layout class="QHBoxLayout" name="horizontalLayout_12">
+                          <item>
+                           <widget class="QLineEdit" name="general_log_text_edit">
+                            <property name="text">
+                             <string>Buscar nas saídas...</string>
+                            </property>
+                           </widget>
+                          </item>
+                          <item>
+                           <widget class="QPushButton" name="general_log_search_button">
+                            <property name="text">
+                             <string>Buscar</string>
+                            </property>
+                           </widget>
+                          </item>
+                         </layout>
+                        </item>
+                        <item>
+                         <layout class="QHBoxLayout" name="horizontalLayout_14">
+                          <item>
+                           <widget class="QTextEdit" name="general_log_screen"/>
+                          </item>
+                          <item>
+                           <widget class="QScrollBar" name="verticalScrollBar_2">
+                            <property name="orientation">
+                             <enum>Qt::Orientation::Vertical</enum>
+                            </property>
+                           </widget>
+                          </item>
+                         </layout>
+                        </item>
+                        <item alignment="Qt::AlignmentFlag::AlignRight">
+                         <widget class="QPushButton" name="clean_all_output">
+                          <property name="text">
+                           <string>Limpar saída</string>
+                          </property>
+                         </widget>
+                        </item>
+                       </layout>
                       </item>
                      </layout>
-                    </item>
-                    <item>
-                     <widget class="QScrollBar" name="log_scroll_bar">
-                      <property name="orientation">
-                       <enum>Qt::Orientation::Vertical</enum>
-                      </property>
-                     </widget>
-                    </item>
-                   </layout>
+                    </widget>
+                   </widget>
                   </item>
                  </layout>
                 </widget>
@@ -480,10 +565,19 @@
     <property name="title">
      <string>File</string>
     </property>
+    <property name="enabled">
+     <bool>true</bool>
+    </property>
    </widget>
    <widget class="QMenu" name="menuSensor">
+    <property name="cursor">
+     <cursorShape>PointingHandCursor</cursorShape>
+    </property>
     <property name="title">
      <string>Sensor</string>
+    </property>
+    <property name="enabled">
+     <bool>true</bool>
     </property>
     <addaction name="actionVer_sensores"/>
     <addaction name="actionAdicionar"/>
@@ -501,7 +595,7 @@
     <bool>false</bool>
    </property>
    <property name="icon">
-    <iconset theme="QIcon::ThemeIcon::EditPaste"/>
+    <iconset theme="QIcon::ThemeIcon::EditFind"/>
    </property>
    <property name="text">
     <string>Ver sensores</string>

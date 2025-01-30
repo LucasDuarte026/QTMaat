@@ -7,7 +7,7 @@
 #include <QVBoxLayout>
 #include <QLineEdit>
 #include <QScrollBar>
-
+#include <QDateTime>
 class LogServoWindow : public QWidget {
     Q_OBJECT
 

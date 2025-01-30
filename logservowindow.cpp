@@ -19,7 +19,13 @@ LogServoWindow::LogServoWindow(QTextEdit *logTextArea, QLineEdit *searchBar,
 }
 
 void LogServoWindow::appendLog(const QString &message) {
-    myLogTextArea->append(message);
+    QDateTime now = QDateTime::currentDateTime();
+    QString timestamp = now.toString("yyyy-MM-dd hh:mm:ss.zzz"); // Formato: AAAA-MM-DD HH:MM:SS.MS
+
+    // Concatenar o timestamp com a mensagem
+    QString logMessage = " |" + timestamp + "| " + message;
+
+    myLogTextArea->append(logMessage);
 
     // Rolar para baixo automaticamente
     QScrollBar *scrollBar = myLogTextArea->verticalScrollBar();
