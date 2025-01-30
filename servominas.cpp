@@ -167,21 +167,28 @@ bool ServoMinas::debugOperation(int durationMs) {
         minas_control::MinasOutput output = client->readOutputs();
 
         if ((QDateTime::currentMSecsSinceEpoch() - start_time) % 40 == 0) { // Log every 40ms
-            std::cout << "err = " << std::hex << std::setw(4) << std::setfill('0') << input.error_code
-                      << ", ctrl = " << std::hex << std::setw(4) << std::setfill('0') << output.controlword
-                      << ", status = " << std::hex << std::setw(4) << std::setfill('0') << input.statusword
-                      << ", op_mode = " << std::dec << input.operation_mode
+            std::cout << "err = "       << std::hex << std::setw(4) << std::setfill('0') << input.error_code
+                      << ", ctrl = "    << std::hex << std::setw(4) << std::setfill('0') << output.controlword
+                      << ", status = "  << std::hex << std::setw(4) << std::setfill('0') << input.statusword
+                      << ", op_mode = " << std::hex << std::setw(2) << std::setfill('0') << input.operation_mode
                       << ", pos = " << std::hex << std::setw(8) << std::setfill('0') << input.position_actual_value
                       << ", vel = " << std::hex << std::setw(8) << std::setfill('0') << input.velocity_actual_value
-                      << ", tor = " << std::hex << std::setw(8) << std::setfill('0') << input.torque_actual_value
+                      << ", tor = " << std::hex << std::setw(4) << std::setfill('0') << input.torque_actual_value
                       << " -> Tempo decorrido: " << std::dec << (QDateTime::currentMSecsSinceEpoch() - start_time) << " ms" << std::endl;
 
+            if (input.statusword & 0x0400)
+            { // target reached (bit 10)
+
+                std::cout << "target reached\n" << std::endl;
+                // break;
+
+            }
             std::cout << "Raw 6060h (decimal): " << output.operation_mode << std::endl;
             std::cout << "Raw 6061h (decimal): " << input.operation_mode << std::endl;
 
             std::cout << "Input:" << std::endl;
-            std::cout << " 603Fh " << std::hex << std::setw(8) << std::setfill('0') << input.error_code << ":Error code" << std::endl;
             std::cout << " 6041h " << std::hex << std::setw(8) << std::setfill('0') << input.statusword << ":Statusword" << std::endl;
+            std::cout << " 603Fh " << std::hex << std::setw(8) << std::setfill('0') << input.error_code << ":Error code" << std::endl;
             std::cout << " 6061h " << std::hex << std::setw(8) << std::setfill('0') << input.operation_mode << ":Modes of operation display" << std::endl;
             std::cout << " 6064h " << std::hex << std::setw(8) << std::setfill('0') << input.position_actual_value << ":Position actual value" << std::endl;
             std::cout << " 606Ch " << std::hex << std::setw(8) << std::setfill('0') << input.velocity_actual_value << ":Velocity actual value" << std::endl;
@@ -213,7 +220,6 @@ void ServoMinas::moveToHome() {
     QString message;
     if (client) {
         if (isCommunicationEnabled) {
-            enableServo(0x06);
             client->setSwitchSpeed(8000000);
             client->setZeroSpeed(8000000);
             client->setHomingAcceleration(33554432);
@@ -223,9 +229,11 @@ void ServoMinas::moveToHome() {
             client->setCommunicationFuntionExtendedSetup(40);
             client->setHomingReturnSpeedLimit(20000);
             client->setHomingMode(34);  // (On Index Pulse +Ve direction)
-            client->setTouchProbe(7);
+            // client->setTouchProbe(7);
 
+            enableServo(0x06);
             memset(&output, 0x00, sizeof(minas_control::MinasOutput));
+            output.max_motor_speed = 500;
             output.target_torque = 500;
             output.max_torque = 500;
             output.controlword = 0x001F;
@@ -249,7 +257,7 @@ void ServoMinas::moveToHome() {
     qDebug() << message;
 
 
-    // bool success = debugOperation(4000);
+    bool success = debugOperation(4000);
 
 }
 
