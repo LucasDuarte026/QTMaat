@@ -23,7 +23,7 @@ ServoMinas::~ServoMinas() {
     }
 }
 
-void ServoMinas::initialize() {
+bool ServoMinas::initialize() {
     QString message;
     try {
         manager = new ethercat::EtherCatManager(interfaceName.toStdString());
@@ -32,9 +32,9 @@ void ServoMinas::initialize() {
         if (manager->getNumClients() < 1) {
             emit state(false);
             QMessageBox::information(nullptr, "Falha", "Certifique-se que o servo está conectado");
-            return; // Importante: Sair cedo se nenhum cliente for encontrado
             message = "Certifique-se que o servo está conectado";
             emit logMessage(message);
+            return false; // Importante: Sair cedo se nenhum cliente for encontrado
         }
 
         client = new minas_control::MinasClient(*manager, 1);
@@ -46,6 +46,7 @@ void ServoMinas::initialize() {
         emit logMessage(message);
         qDebug() << message ;
         emit state(true); // Emitir sinal de sucesso
+        return true;
 
     } catch (const ethercat::EtherCatError &e) {
         emit state(false);
@@ -57,6 +58,7 @@ void ServoMinas::initialize() {
 
         qDebug() << message;
         emit logMessage(message);
+        return false;
     }
 }
 
@@ -101,7 +103,7 @@ void ServoMinas::disableServo() {
     QString message;
     if (client) {
 
-        minas_control::MinasInput input = client->readInputs();
+         input = client->readInputs();
         client->printPDSStatus(input);
         client->printPDSOperation(input);
         client->servoOff();
@@ -113,7 +115,6 @@ void ServoMinas::disableServo() {
     qDebug() << message;
 
 }
-
 
 void ServoMinas::resetErrors() {
     QString message;
@@ -145,7 +146,6 @@ void ServoMinas::configureSafetyLimits() {
 
 }
 
-
 bool ServoMinas::debugOperation(int durationMs) {
     if (!client || !isCommunicationEnabled) {
         emit logMessage("Cliente não inicializado ou comunicação desabilitada.");
@@ -163,8 +163,8 @@ bool ServoMinas::debugOperation(int durationMs) {
 
 
     while (QDateTime::currentMSecsSinceEpoch() < end_time) {
-        minas_control::MinasInput input = client->readInputs();
-        minas_control::MinasOutput output = client->readOutputs();
+        input = client->readInputs();
+        output = client->readOutputs();
 
         if ((QDateTime::currentMSecsSinceEpoch() - start_time) % 40 == 0) { // Log every 40ms
             std::cout << "err = "       << std::hex << std::setw(4) << std::setfill('0') << input.error_code
@@ -306,8 +306,40 @@ void ServoMinas::updateCommunicationState(bool checked) {
 }
 
 
-
 // ---- ---- ---- ---- ---- Setters and Getters ---- ---- ---- ---- ----
+
+
+minas_control::MinasInput ServoMinas::readInput(){
+    QString message;
+    minas_control::MinasInput input;
+
+    if(client)
+{
+        input = client->readInputs();
+        return  input;
+    }
+    else{
+        message =  "Cliente não inicializado. Não é possível fazer a leitura das entradas.";
+        emit logMessage(message);
+        return input;
+    }
+
+}
+minas_control::MinasOutput ServoMinas::readOutput(){
+    QString message;
+    minas_control::MinasOutput output;
+
+    if(client)
+    {
+        output = client->readOutputs();
+        return  output;
+    }
+    else{
+        message =  "Cliente não inicializado. Não é possível fazer a leitura das saídas.";
+        emit logMessage(message);
+        return output;
+    }
+}
 
 void ServoMinas::setActualPosition(uint32_t value){    this->actual_position = value;     }
 

@@ -30,8 +30,6 @@ public:
     double getArriveAngle();
     QString getTurnDirection();
 
-protected:
-    bool eventFilter(QObject *obj, QEvent *event) override;
 
 signals:
     void servoCheckBoxChanged(bool checked);    // Enviar o sinal geral que a caixa de habilitação de comunicação com o servo foi mudada de estado
@@ -51,6 +49,10 @@ private slots:
     void startHoming ();
     void clearServoErrors();
     void insertedAngleToAchieve();
+    void filterGeneralLog(const QString &text);
+    void filterServoLog(const QString &text);
+    void updateGeneralLogContent();
+    void updateServoLogContent();
 
 
 private:
@@ -63,6 +65,8 @@ private:
     SensorData sensorData;
     LogServoWindow *logServoWindow;
     LogHandler * logHandler;
+    QString originalGeneralLogContent;
+    QString originalServoLogContent;
 
 
     ServoMinas *myServo;

@@ -13,7 +13,7 @@ SensorSelectionWindow::SensorSelectionWindow(QWidget *parent)
     , okButton(new QPushButton("OK", this))
     , cancelButton(new QPushButton("Cancel", this))
 {
-    setWindowTitle("Select a Sensor");
+    setWindowTitle("Selecione um sensor");
     resize(500, 400);
 
     // Configurar layout principal

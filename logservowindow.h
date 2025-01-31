@@ -13,7 +13,7 @@ class LogServoWindow : public QWidget {
 
 public:
     explicit LogServoWindow(QTextEdit *logTextArea, QLineEdit *searchBar,
-                            QPushButton *clearButton, QPushButton *searchButton, QWidget *parent = nullptr);
+                            QPushButton *clearButton, QWidget *parent = nullptr);
 
     void appendLog(const QString &message);  // Adiciona mensagem ao log
 
@@ -25,7 +25,6 @@ private:
     QTextEdit *myLogTextArea;  // Área de exibição do log
     QLineEdit *mySearchBar;    // Barra de pesquisa
     QPushButton *myClearButton; // Botão para limpar logs
-    QPushButton *mySearchButton; // Botão para pesquisar logs
 };
 
 #endif // LOGSERVOWINDOW_H

@@ -18,7 +18,7 @@ public:
     ServoMinas(QString interface);
     ~ServoMinas();
 
-    void initialize(); // Inicializa o cliente EtherCAT
+    bool initialize(); // Inicializa o cliente EtherCAT
     void moveAbsoluteTo(double position, double velocity = 500); // Move para uma posição absoluta
     void enableServo(int mode); // Habilita o servo para operação
     void disableServo(); // Desabilita o servo
@@ -27,7 +27,6 @@ public:
     void setActualPosition(uint32_t value);
     uint32_t getActualPosition();
 
-
 public slots:
     void updateCommunicationState(bool checked);
 
@@ -35,8 +34,8 @@ public slots:
 signals:
     void logMessage(QString message); // enviar os logs para o logwindow
     void state(bool servo_situation);
-private:
 
+private:
     QString interfaceName;
     ethercat::EtherCatManager *manager;
     minas_control::MinasClient *client;
@@ -47,6 +46,9 @@ private:
     bool isCommunicationEnabled;
     void configureSafetyLimits(); // Configura os limites de segurança do servo
     bool debugOperation(int durationMs);
+    minas_control::MinasOutput  readOutput();
+    minas_control::MinasInput   readInput();
+
 };
 
 #endif // SERVOMINAS_H

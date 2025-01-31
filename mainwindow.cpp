@@ -55,56 +55,48 @@ MainWindow::MainWindow(QWidget *parent)
     }
 
     logHandler = new LogHandler(ui->general_log_screen, this);
-    logServoWindow = new LogServoWindow(ui->log_screen, ui->search_line_log,
-                                        ui->clean_log_button, ui->search_log_button, this);
+    logServoWindow = new LogServoWindow(ui->servo_log_screen, ui->filter_servo_log,
+                                        ui->clean_log_button, this);
     myServo = new ServoMinas("enp2s0"); // enp2s0 para linux. eth0 para windows
 
 // seção das conexões
-    //  Quando o sensor é selecionado, deve se mudar as variaveis privadas de mainWindow
-
-    // Example: Connecting a signal from the QDial
-
-    // inicializar a imagem
-
-    // QPixmap pixmap2(":/images/resources/green_cicle.png");  // // trocar pela imagem do green circle
-    // ui->label_greenCircle->setPixmap(pixmap2);
-
+    // Selecionar sensor
     connect(ui->sensorSelected, &QPushButton::clicked, this, &MainWindow::by_sensorSelected_action);
+    // Animar Dial com simulação de operação
     connect(ui->animate_dial_button, &QPushButton::clicked, this, &MainWindow::by_animate_dial_button_action);
 
-    connect(myDial, &QDial::valueChanged, this, [this](){
-        // ui->actual_dial_degree->setText(QString::number(myDial->value(),'f',4)+"º");
-        ui->actual_dial_degree->setText(QString::number(this->actual_servo_value,'f',4)+"º");
+    //  Atualizar em tempo real o atual valor atual do servo motor
 
-    });
+
+    // usar sinal
+
+    // connect(myDial, &QDial::valueChanged, this, [this](){
+    //     // ui->actual_dial_degree->setText(QString::number(myDial->value(),'f',4)+"º");
+    //     ui->actual_dial_degree->setText(QString::number(myServo->actual_position));
+
+    // });
     connect(myInsertDegree, &QLineEdit::returnPressed, this, &MainWindow::insertedAngleToAchieve);
 
-// botões de limpeza e de filtro da aba de logs gerais
+    {// botões de limpeza e de filtro da aba de logs gerais
 
-    // Conectar botão de buscar ao filtro da aba general_log_screen
-    connect(ui->general_log_search_button, &QPushButton::clicked, this, [this]() {
-        QString searchText = ui->general_log_text_edit->text().trimmed();
+        originalGeneralLogContent = ui->general_log_screen->toPlainText();
+        originalServoLogContent = ui->servo_log_screen->toPlainText();
 
-        if (!searchText.isEmpty()) {
-            QString logContent = ui->general_log_screen->toPlainText();
-            QStringList lines = logContent.split("\n");
+        connect(ui->general_log_screen, &QTextEdit::textChanged, this, &MainWindow::updateGeneralLogContent);
+        connect(ui->servo_log_screen, &QTextEdit::textChanged, this, &MainWindow::updateServoLogContent);
 
-            QStringList filteredLines;
-            for (const QString &line : lines) {
-                if (line.contains(searchText, Qt::CaseInsensitive)) {
-                    filteredLines.append(line);
-                }
-            }
+        ui->filter_general_log->setPlaceholderText("Buscar no log geral...");
+        // Conectar botão de limpar para apagar todo o log geral
+        connect(ui->clean_all_output, &QPushButton::clicked, ui->general_log_screen, &QTextEdit::clear);
+        // filtrar conteúdo do log geral
+        connect(ui->filter_general_log, &QLineEdit::textChanged, this, &MainWindow::filterGeneralLog);
 
-            ui->general_log_screen->clear();
-            for (const QString &line : filteredLines) {
-                ui->general_log_screen->append(line);
-            }
-        }
-    });
-
-    // Conectar botão de limpar para apagar todo o log geral
-    connect(ui->clean_all_output, &QPushButton::clicked, ui->general_log_screen, &QTextEdit::clear);
+        ui->filter_servo_log->setPlaceholderText("Buscar no log do servo...");
+        // Conectar botão de limpar para apagar todo o log do servo
+        connect(ui->clean_all_output, &QPushButton::clicked, ui->general_log_screen, &QTextEdit::clear);
+        // filtrar conteúdo do log do servo
+        connect(ui->filter_servo_log, &QLineEdit::textChanged, this, &MainWindow::filterServoLog);
+    }
 
     connect(myDial, &QDial::sliderReleased, this, [this]() {
         double min = sensorData.start_angle ;
@@ -132,6 +124,7 @@ MainWindow::MainWindow(QWidget *parent)
     // conexões do timer de ligar e desligar o servo:
     connect(ui->init_servo_button, &QPushButton::clicked, this, &MainWindow::initializeServo);
     connect(ui->disable_servo_button, &QPushButton::clicked, this, &MainWindow::stopOperation);
+    connect(ui->disable_servo_button_2, &QPushButton::clicked, this, &MainWindow::stopOperation);
 
     // Operações no servo
     connect(ui->homing_button, &QPushButton::clicked, this, &MainWindow::startHoming);
@@ -145,6 +138,7 @@ MainWindow::~MainWindow()
     delete ui;
 }
 
+// Funcionalidades gerais da janela pricipal em manipular os sensores
 void MainWindow::by_sensorSelected_action()
 {
     // Cria a janela de seleção se ainda não existir
@@ -158,6 +152,7 @@ void MainWindow::by_sensorSelected_action()
     sensorWindow->show();  // Mostra a janela de seleção
 
 }
+
 void MainWindow::by_animate_dial_button_action()
 {
     if(sensorData.turn_direction =="CW")
@@ -200,7 +195,6 @@ void MainWindow::by_animate_dial_button_action()
         QMessageBox::critical(this, "Erro", "Direção de giro do modelo inserido incorreta\nDeve ser:   'CW' ou 'CCW'");
 
 }
-
 
 void MainWindow::on_actionAdicionar_triggered()
 {
@@ -409,6 +403,62 @@ void MainWindow::updateSensorDependencies(SensorData *_sensorData) {
     qDebug() << "Turn Direction:" << sensorData.turn_direction;
 }
 
+// Filtrar logs
+void MainWindow::updateGeneralLogContent()
+{
+    originalGeneralLogContent = ui->general_log_screen->toPlainText();
+}
+
+void MainWindow::updateServoLogContent()
+{
+    originalServoLogContent = ui->servo_log_screen->toPlainText();
+}
+void MainWindow::filterGeneralLog(const QString &text)
+{
+    QString originalText = ui->general_log_screen->toPlainText(); // Store the ORIGINAL text
+    QStringList linhas = originalText.split("\n"); // Split the ORIGINAL text
+    QStringList linhasFiltradas;
+
+    if (text.isEmpty()) { // If the filter text is empty, show all lines
+        ui->general_log_screen->clear();
+        ui->general_log_screen->append(originalText); // Restore the ORIGINAL content
+        return; // Exit the function early
+    }
+
+    for (const QString &linha : linhas) {
+        if (linha.contains(text, Qt::CaseInsensitive)) { // Use the received 'text'
+            linhasFiltradas.append(linha); // Keep the line if it contains the filter text
+        }
+    }
+
+    ui->general_log_screen->clear(); // Clear the text edit
+    ui->general_log_screen->append(linhasFiltradas.join("\n")); // Display the filtered lines
+}
+
+void MainWindow::filterServoLog(const QString &text)
+{
+    QString originalText = ui->servo_log_screen->toPlainText(); // Store the ORIGINAL text
+    QStringList linhas = originalText.split("\n"); // Split the ORIGINAL text
+    QStringList linhasFiltradas;
+
+    if (text.isEmpty()) { // If the filter text is empty, show all lines
+        ui->servo_log_screen->clear();
+        ui->servo_log_screen->append(originalText); // Restore the ORIGINAL content
+        return; // Exit the function early
+    }
+
+    for (const QString &linha : linhas) {
+        if (linha.contains(text, Qt::CaseInsensitive)) { // Use the received 'text'
+            linhasFiltradas.append(linha); // Keep the line if it contains the filter text
+        }
+    }
+
+    ui->servo_log_screen->clear(); // Clear the text edit
+    ui->servo_log_screen->append(linhasFiltradas.join("\n")); // Display the filtered lines
+}
+
+// Configurações do comportamento do dial reativo
+
 void MainWindow::configDial(QDial *_myDial){
     _myDial->setMinimum(sensorData.start_angle);
     _myDial->setMaximum(sensorData.arrive_angle);
@@ -421,6 +471,10 @@ void MainWindow::configDial(QDial *_myDial){
 
 }
 
+// Funcionalidades relacionada ao micronas
+
+
+
 void MainWindow::servoState(bool servoSituation){
 
     servoUP=servoSituation;
@@ -430,10 +484,9 @@ void MainWindow::servoState(bool servoSituation){
     }
     else
     {
-        qDebug() << " -> Servo desconectado\n";
+        qDebug() << " -> Servo não está conectado\n";
     }
 }
-
 
 void MainWindow::servoCommunicationBox_stateChanged(bool toogled){
 
@@ -453,14 +506,15 @@ void MainWindow::servoCommunicationBox_stateChanged(bool toogled){
 
 void MainWindow::initializeServo()
 {
-    myServo->initialize(); // Inicializar o servo
+    if(myServo->initialize()) // Inicializar o servo
+    {
     qDebug()<< "Servo Habilitado";
     ui->init_servo_button->setEnabled(false);
     ui->disable_servo_button->setEnabled(true);
+    ui->disable_servo_button_2->setEnabled(true);
+    }
 
 }
-
-
 
 void MainWindow::stopOperation(){
 
@@ -468,15 +522,11 @@ void MainWindow::stopOperation(){
     qDebug()<< "Operação parada";
 }
 
-
-
-
 void MainWindow::startHoming(){
 
     qDebug() << "inicializar o homing";
     myServo->moveToHome();
 }
-
 
 void MainWindow::insertedAngleToAchieve(){
     bool ok;
@@ -527,16 +577,4 @@ QString MainWindow::getTurnDirection()
     return this->sensorData.turn_direction ;
 }
 
-bool MainWindow::eventFilter(QObject *obj, QEvent *event)
-{
-    if (obj == ui->menuFile || obj == ui->menuSensor) {
-        if (event->type() == QEvent::Enter) {
-            QMenu *menu = qobject_cast<QMenu*>(obj);
-            if (menu && !menu->isVisible()) {
-                menu->popup(mapToGlobal(menuBar()->actionGeometry(menu->menuAction()).bottomLeft()));
-            }
-            return true;
-        }
-    }
-    return QMainWindow::eventFilter(obj, event);
-}
+

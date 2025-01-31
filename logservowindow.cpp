@@ -1,9 +1,9 @@
 #include "logservowindow.h"
 
 LogServoWindow::LogServoWindow(QTextEdit *logTextArea, QLineEdit *searchBar,
-                               QPushButton *clearButton, QPushButton *searchButton, QWidget *parent)
+                               QPushButton *clearButton, QWidget *parent)
     : QWidget(parent), myLogTextArea(logTextArea), mySearchBar(searchBar),
-    myClearButton(clearButton), mySearchButton(searchButton) {
+    myClearButton(clearButton){
 
     setWindowTitle("Log do Sistema");
 
@@ -15,7 +15,6 @@ LogServoWindow::LogServoWindow(QTextEdit *logTextArea, QLineEdit *searchBar,
 
     // Conectar os botões aos slots
     connect(myClearButton, &QPushButton::clicked, this, &LogServoWindow::clearLog);
-    connect(mySearchButton, &QPushButton::clicked, this, &LogServoWindow::searchLog);
 }
 
 void LogServoWindow::appendLog(const QString &message) {
