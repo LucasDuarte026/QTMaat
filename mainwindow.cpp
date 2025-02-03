@@ -1,9 +1,6 @@
 #include "mainwindow.h"
 #include "./ui_mainwindow.h"
-#include "sensorselectionwindow.h"
-#include "addsensordialog.h"
-#include "removesensordialog.h"
-#include "viewsensorsdialog.h"
+
 
 
 
@@ -24,25 +21,10 @@ MainWindow::MainWindow(QWidget *parent)
     ui->setupUi(this); // configurar e iniciar os elementos definidos em UI
     setWindowTitle("Ma'at");
 
-    /* Verificar se o menu voltou a funcionar
         // Configuração da barra de menu para Linux
-        ui->menubar->setVisible(true);
-        ui->menubar->setEnabled(true);
-        ui->menubar->setNativeMenuBar(false);
 
-        // Garante que os menus estão habilitados e configurados
-        ui->menuFile->setEnabled(true);
-        ui->menuSensor->setEnabled(true);
 
-        // Configura o comportamento dos menus para Linux
-        menuBar()->setDefaultUp(true); // Força os menus a abrirem para cima
-        ui->menuFile->setSeparatorsCollapsible(false);
-        ui->menuSensor->setSeparatorsCollapsible(false);
-
-        // Conecta os eventos de hover dos menus
-        ui->menuFile->installEventFilter(this);
-        ui->menuSensor->installEventFilter(this);
-    */
+    ui->menubar->setNativeMenuBar(false);
 
     myDial = ui->dial_elements->findChild<QDial*>("plan_dial"); // usando o dial criado no UI
     myInsertDegree = ui->degreeInsertDial;
@@ -129,7 +111,8 @@ MainWindow::MainWindow(QWidget *parent)
     // Operações no servo
     connect(ui->homing_button, &QPushButton::clicked, this, &MainWindow::startHoming);
     connect(ui->clear_errors, &QPushButton::clicked, this, &MainWindow::clearServoErrors);
-
+    //  Atualização dos dados da tela em função da modificação do input or output do servo vindo do PDO
+    connect(myServo, &ServoMinas::dataChanged,this, &MainWindow::updateActualServoData);
 
 }
 
@@ -138,20 +121,6 @@ MainWindow::~MainWindow()
     delete ui;
 }
 
-// Funcionalidades gerais da janela pricipal em manipular os sensores
-void MainWindow::by_sensorSelected_action()
-{
-    // Cria a janela de seleção se ainda não existir
-    sensorWindow = new SensorSelectionWindow(this);  // Define o MainWindow como pai
-    connect(sensorWindow, &SensorSelectionWindow::sensorSelected, this, &MainWindow::updateSensorDependencies);
-    // connect(sensorWindow, &QObject::destroyed, this, [this]() {
-    //     sensorWindow = nullptr;
-    //     });
-
-
-    sensorWindow->show();  // Mostra a janela de seleção
-
-}
 
 void MainWindow::by_animate_dial_button_action()
 {
@@ -165,7 +134,7 @@ void MainWindow::by_animate_dial_button_action()
 
             real_angle=double(i)/10;
             qDebug() << "|" << min << "| -> |"  << max << "|     Posição do dial é:" << real_angle ;
-            this->setServoAbsolutePosition(real_angle);
+            this->setServoAngularPosition(real_angle,500);
             myAnimate_progress_bar->setValue(real_angle);
             myDial->setValue(real_angle);
             QEventLoop loop;
@@ -183,7 +152,7 @@ void MainWindow::by_animate_dial_button_action()
 
             real_angle=double(i)/10;
             qDebug() << "|" << max << "| -> |"  << min<< "|     Posição do dial é:" << real_angle ;
-            this->setServoAbsolutePosition(real_angle);
+            this->setServoAngularPosition(real_angle,500);
             myAnimate_progress_bar->setValue(real_angle);
             myDial->setValue(real_angle);
             QEventLoop loop;
@@ -193,6 +162,21 @@ void MainWindow::by_animate_dial_button_action()
     }
     else
         QMessageBox::critical(this, "Erro", "Direção de giro do modelo inserido incorreta\nDeve ser:   'CW' ou 'CCW'");
+
+}
+
+// Funcionalidades gerais da janela pricipal em manipular os sensores
+void MainWindow::by_sensorSelected_action()
+{
+    // Cria a janela de seleção se ainda não existir
+    sensorWindow = new SensorSelectionWindow(this);  // Define o MainWindow como pai
+    connect(sensorWindow, &SensorSelectionWindow::sensorSelected, this, &MainWindow::updateSensorDependencies);
+    // connect(sensorWindow, &QObject::destroyed, this, [this]() {
+    //     sensorWindow = nullptr;
+    //     });
+
+
+    sensorWindow->show();  // Mostra a janela de seleção
 
 }
 
@@ -286,6 +270,57 @@ void MainWindow::on_actionAdicionar_triggered()
     }
 }
 
+void MainWindow::on_actionAtualizar_triggered()
+{
+    // Create and show sensor selection window
+    SensorSelectionWindow *selectionWindow = new SensorSelectionWindow(this);
+    connect(selectionWindow, &SensorSelectionWindow::sensorSelected, this, [this](SensorData *selectedSensor) {
+        if (selectedSensor) {
+            // Create and show update dialog with current sensor data
+            UpdateSensorDialog updateDialog(*selectedSensor, this);
+            if (updateDialog.exec() == QDialog::Accepted) {
+                // Read the CSV file
+                QFile file("sensors.csv");
+                if (!file.open(QIODevice::ReadWrite | QIODevice::Text)) {
+                    QMessageBox::critical(this, "Erro", "Não foi possível abrir o arquivo sensors.csv");
+                    return;
+                }
+
+                // Read all lines
+                QStringList lines;
+                QTextStream in(&file);
+                QString header = in.readLine(); // Save header
+                lines.append(header);
+
+                while (!in.atEnd()) {
+                    QString line = in.readLine();
+                    QStringList fields = line.split(',');
+                    if (fields.size() >= 4 && fields[0] == selectedSensor->model_name) {
+                        // Replace this line with updated data
+                        line = QString("%1,%2,%3,%4")
+                                   .arg(updateDialog.getModelName())
+                                   .arg(updateDialog.getStartAngle())
+                                   .arg(updateDialog.getEndAngle())
+                                   .arg(updateDialog.getRotationDirection());
+                    }
+                    lines.append(line);
+                }
+
+                // Write back to file
+                file.resize(0);
+                QTextStream out(&file);
+                for (const QString &line : lines) {
+                    out << line << "\n";
+                }
+
+                file.close();
+                QMessageBox::information(this, "Sucesso", "Sensor atualizado com sucesso!");
+            }
+        }
+    });
+    selectionWindow->show();
+}
+
 void MainWindow::on_actionRemover_triggered()
 {
     // Caminho do arquivo CSV no diretório raiz do projeto
@@ -364,7 +399,7 @@ void MainWindow::on_actionRemover_triggered()
     }
 }
 
-void MainWindow::on_actionVer_sensores_triggered()
+void MainWindow::on_actionVer_Sensores_triggered()
 {
     // Caminho do arquivo CSV
     QString filePath = QCoreApplication::applicationDirPath() + "/sensors.csv";
@@ -413,6 +448,7 @@ void MainWindow::updateServoLogContent()
 {
     originalServoLogContent = ui->servo_log_screen->toPlainText();
 }
+
 void MainWindow::filterGeneralLog(const QString &text)
 {
     QString originalText = ui->general_log_screen->toPlainText(); // Store the ORIGINAL text
@@ -475,7 +511,8 @@ void MainWindow::configDial(QDial *_myDial){
 
 
 
-void MainWindow::servoState(bool servoSituation){
+void MainWindow::servoState(bool servoSituation)
+{
 
     servoUP=servoSituation;
     if(servoUP){
@@ -488,7 +525,8 @@ void MainWindow::servoState(bool servoSituation){
     }
 }
 
-void MainWindow::servoCommunicationBox_stateChanged(bool toogled){
+void MainWindow::servoCommunicationBox_stateChanged(bool toogled)
+{
 
     ui->animate_dial_button->setEnabled(!toogled);
 
@@ -508,22 +546,23 @@ void MainWindow::initializeServo()
 {
     if(myServo->initialize()) // Inicializar o servo
     {
-    qDebug()<< "Servo Habilitado";
-    ui->init_servo_button->setEnabled(false);
-    ui->disable_servo_button->setEnabled(true);
-    ui->disable_servo_button_2->setEnabled(true);
+        qDebug()<< "Servo Habilitado";
+        ui->init_servo_button->setEnabled(false);
+        ui->disable_servo_button->setEnabled(true);
+        ui->disable_servo_button_2->setEnabled(true);
     }
 
 }
 
-void MainWindow::stopOperation(){
+void MainWindow::stopOperation()
+{
 
     myServo->disableServo(); // Desabilitar o servo
     qDebug()<< "Operação parada";
 }
 
-void MainWindow::startHoming(){
-
+void MainWindow::startHoming()
+{
     qDebug() << "inicializar o homing";
     myServo->moveToHome();
 }
@@ -532,9 +571,13 @@ void MainWindow::insertedAngleToAchieve(){
     bool ok;
     double insertedValue = myInsertDegree->text().toDouble(&ok);
     qDebug() << "Valor alterado para:" << insertedValue;
-
+    int velocity = 300; // valor padrão
+    if(!ui->servo_velocity_setup->text().isEmpty()) // se ouver algo dentro da celular de velocidade, irá usar o valor de la
+    {
+        velocity = ui->servo_velocity_setup->text().toDouble();
+    }
     if(ok && insertedValue<= sensorData.arrive_angle && insertedValue>=sensorData.start_angle){
-        myServo->moveAbsoluteTo(insertedValue,500);
+        myServo->moveAbsoluteTo(insertedValue,velocity  );
         myDial->setValue(insertedValue);
     }
     else{
@@ -543,21 +586,34 @@ void MainWindow::insertedAngleToAchieve(){
 
 }
 
-void MainWindow::clearServoErrors(){
+void MainWindow::clearServoErrors()
+{
 
     myServo->resetErrors();
 }
 
+void MainWindow::setServoAngularPosition(double angle, double velocity){
+
+        // definir o envio do pacote, ver se foi um sucesso e possivelmente enviar um não void para verificação
+}
+
+
+
+
 //  -------------- setters e getters para os dados da main --------------
 
-void MainWindow::setServoAbsolutePosition(double _value){
-
-    // definir o envio do pacote, ver se foi um sucesso e possivelmente enviar um não void para verificação
-}
 
 void MainWindow::setSensorData(SensorData _data)
 {
     this->sensorData = _data;
+}
+
+
+void MainWindow::updateActualServoData(){
+    qDebug() << "foi alterado";
+    uint32 actualServoPosition = myServo->input.position_actual_value;
+
+    ui->servo_hex_position->setText( QString::number(actualServoPosition));
 }
 
 QString MainWindow::getModelName()
@@ -576,5 +632,11 @@ QString MainWindow::getTurnDirection()
 {
     return this->sensorData.turn_direction ;
 }
+
+
+
+
+
+
 
 
