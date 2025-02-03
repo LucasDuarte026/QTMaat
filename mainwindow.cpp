@@ -1,10 +1,6 @@
 #include "mainwindow.h"
 #include "./ui_mainwindow.h"
 
-
-
-
-
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
@@ -13,13 +9,12 @@ MainWindow::MainWindow(QWidget *parent)
     , actual_servo_value(0.0)
     , myServo(nullptr)        // ponteiro para a classe que controla o servo
     , logServoWindow(nullptr) // ponteiro para a janela de log dentro da mainWindow
-    , timerState(true)
     , servoUP(false)          // bool que comunica o estado do servo (se está apto a ser usado)
     , myUser{"Usuário comum","prod"}
 {
-// config section
+
     ui->setupUi(this); // configurar e iniciar os elementos definidos em UI
-    setWindowTitle("Ma'at");
+    setWindowTitle("Ma'at"); // Título da janela
 
 
     // Configuração da barra de menu para Linux

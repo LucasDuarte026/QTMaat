@@ -28,8 +28,10 @@ class MainWindow : public QMainWindow
     Q_OBJECT
 
 public:
-    explicit MainWindow(QWidget *parent = nullptr);
+    explicit MainWindow(QWidget *parent = nullptr); // construtor da janela principal
     ~MainWindow();
+
+    // retornar os atributos do sensor
     QString getModelName();
     double getStartAngle();
     double getArriveAngle();
@@ -37,11 +39,14 @@ public:
 
 
 signals:
+    // Sinal enviado pela main window para avisar que a comunicação com o servo foi iniciada
     void servoCheckBoxChanged(bool checked);    // Enviar o sinal geral que a caixa de habilitação de comunicação com o servo foi mudada de estado
 
 private slots:
     //Atualizar as dependências na mainWindow em função do sensor selecionado
     void updateSensorDependencies(SensorData *_sensorData);
+
+    // Abrir a janela de seleção do sensor pela janela principal
     void by_sensorSelected_action();
 
     // CRUD de sensores
@@ -64,12 +69,14 @@ private slots:
     void servoCommunicationBox_stateChanged(bool checked);
     void servoState(bool servoSituation);
 
+
     //  Funções de controle EtherCAT
     void stopOperation();
     void initializeServo();
     void startHoming ();
     void clearServoErrors();
     void insertedAngleToAchieve();
+    void setServoAngularPosition(double angle, double velocity);    //  envia comando para o servo de posicionamento
 
     //  Filtrar as telas de log em função da aba
     void filterGeneralLog(const QString &text);
@@ -86,6 +93,7 @@ private slots:
 
 
 private:
+    // ponteiros para as estruturas a baixo da janela principal
     Ui::MainWindow *ui;
     QDial *myDial;
     QProgressBar *myAnimate_progress_bar;
@@ -107,10 +115,9 @@ private:
     ServoMinas *myServo;
 
     UserType myUser;  // Guarda o nome do usuário e sua permissão de acesso na página
-    double actual_servo_value;
-    bool timerState;    //  Variavel para controle do estado do servo para controle de ligar e desligá-lo
-    bool servoUP;
-    void setServoAngularPosition(double angle, double velocity);
+    double actual_servo_value; // variável que guarda a posição atual do servo em hexa
+    bool servoUP;       // variável para ver se o servo está habilitado
+
     void configDial(QDial *_myDial);
 
 };
