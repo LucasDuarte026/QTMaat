@@ -26,6 +26,8 @@ public:
     void moveToHome(); // Move to home position
     void setActualPosition(uint32_t value);
     uint32_t getActualPosition();
+    minas_control::MinasOutput output;
+    minas_control::MinasInput input;
 
 public slots:
     void updateCommunicationState(bool checked);
@@ -34,14 +36,14 @@ public slots:
 signals:
     void logMessage(QString message); // enviar os logs para o logwindow
     void state(bool servo_situation);
+    void dataChanged();
 
 private:
     QString interfaceName;
     ethercat::EtherCatManager *manager;
     minas_control::MinasClient *client;
-    minas_control::MinasOutput output;
-    minas_control::MinasInput input;
 
+    bool inOperation;
     uint32_t actual_position;
     bool isCommunicationEnabled;
     void configureSafetyLimits(); // Configura os limites de segurança do servo

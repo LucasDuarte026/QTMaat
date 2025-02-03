@@ -415,6 +415,13 @@
                   </property>
                  </spacer>
                 </item>
+                <item row="0" column="1">
+                 <widget class="QLineEdit" name="servo_velocity_setup">
+                  <property name="placeholderText">
+                   <string>Velocidade do servo (rad/s): </string>
+                  </property>
+                 </widget>
+                </item>
                </layout>
               </widget>
              </item>
@@ -621,64 +628,46 @@
      <height>23</height>
     </rect>
    </property>
-   <widget class="QMenu" name="menuFile">
-    <property name="enabled">
-     <bool>true</bool>
-    </property>
-    <property name="cursor">
-     <cursorShape>PointingHandCursor</cursorShape>
-    </property>
+   <widget class="QMenu" name="menuteste">
     <property name="title">
-     <string>File</string>
+     <string>Usuários</string>
     </property>
+    <addaction name="actionteste2"/>
    </widget>
-   <widget class="QMenu" name="menuSensor">
-    <property name="enabled">
-     <bool>true</bool>
-    </property>
-    <property name="cursor">
-     <cursorShape>PointingHandCursor</cursorShape>
-    </property>
+   <widget class="QMenu" name="menuSensores">
     <property name="title">
-     <string>Sensor</string>
+     <string>Sensores</string>
     </property>
-    <addaction name="actionVer_sensores"/>
+    <addaction name="actionVer_Sensores"/>
     <addaction name="actionAdicionar"/>
+    <addaction name="actionAtualizar"/>
     <addaction name="actionRemover"/>
    </widget>
-   <addaction name="menuFile"/>
-   <addaction name="menuSensor"/>
+   <addaction name="menuteste"/>
+   <addaction name="menuSensores"/>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
-  <action name="actionVer_sensores">
-   <property name="checkable">
-    <bool>false</bool>
+  <action name="actionteste2">
+   <property name="text">
+    <string>Fazer login</string>
    </property>
-   <property name="checked">
-    <bool>false</bool>
-   </property>
-   <property name="icon">
-    <iconset theme="QIcon::ThemeIcon::EditFind"/>
-   </property>
+  </action>
+  <action name="actionVer_Sensores">
    <property name="text">
     <string>Ver sensores</string>
    </property>
   </action>
   <action name="actionAdicionar">
-   <property name="checkable">
-    <bool>false</bool>
-   </property>
-   <property name="icon">
-    <iconset theme="QIcon::ThemeIcon::DocumentNew"/>
-   </property>
    <property name="text">
     <string>Adicionar</string>
    </property>
   </action>
-  <action name="actionRemover">
-   <property name="icon">
-    <iconset theme="QIcon::ThemeIcon::EditClear"/>
+  <action name="actionAtualizar">
+   <property name="text">
+    <string>Atualizar</string>
    </property>
+  </action>
+  <action name="actionRemover">
    <property name="text">
     <string>Remover</string>
    </property>

@@ -10,6 +10,7 @@ ServoMinas::ServoMinas(QString interface)
     , manager(nullptr)
     , client(nullptr)
     , isCommunicationEnabled(false)
+    , inOperation(false)
 {
 }
 
@@ -155,16 +156,9 @@ bool ServoMinas::debugOperation(int durationMs) {
     quint64 start_time = QDateTime::currentMSecsSinceEpoch();
     quint64 end_time = start_time + durationMs;
 
-    // Send the command to your device *before* starting the observation
-    // This part depends on how you send commands.  Examples:
-    // client->sendCommand(yourCommand);  // If you have a sendCommand method
-    // Or write directly to registers:
-    // client->writeOutputs(yourOutputStructure);
-
-
     while (QDateTime::currentMSecsSinceEpoch() < end_time) {
-        input = client->readInputs();
-        output = client->readOutputs();
+        input = readInput();
+        output = readOutput();
 
         if ((QDateTime::currentMSecsSinceEpoch() - start_time) % 40 == 0) { // Log every 40ms
             std::cout << "err = "       << std::hex << std::setw(4) << std::setfill('0') << input.error_code
@@ -178,13 +172,9 @@ bool ServoMinas::debugOperation(int durationMs) {
 
             if (input.statusword & 0x0400)
             { // target reached (bit 10)
-
                 std::cout << "target reached\n" << std::endl;
                 // break;
-
             }
-            std::cout << "Raw 6060h (decimal): " << output.operation_mode << std::endl;
-            std::cout << "Raw 6061h (decimal): " << input.operation_mode << std::endl;
 
             std::cout << "Input:" << std::endl;
             std::cout << " 6041h " << std::hex << std::setw(8) << std::setfill('0') << input.statusword << ":Statusword" << std::endl;
@@ -212,14 +202,31 @@ bool ServoMinas::debugOperation(int durationMs) {
         QCoreApplication::processEvents(); // manter a aplicação rodando
     }
 
-    emit logMessage("Observação concluída.");
     return true;
+}
+
+minas_control::MinasOutput ServoMinas::readOutput(){
+    QString message;
+    minas_control::MinasOutput output;
+
+    if(client)
+    {
+        output = client->readOutputs();
+        emit dataChanged();
+        return  output;
+    }
+    else{
+        message =  "Cliente não inicializado. Não é possível fazer a leitura das saídas.";
+        emit logMessage(message);
+        return output;
+    }
 }
 
 void ServoMinas::moveToHome() {
     QString message;
     if (client) {
         if (isCommunicationEnabled) {
+            inOperation = true;
             client->setSwitchSpeed(8000000);
             client->setZeroSpeed(8000000);
             client->setHomingAcceleration(33554432);
@@ -258,6 +265,11 @@ void ServoMinas::moveToHome() {
 
 
     bool success = debugOperation(4000);
+    if(success)
+        emit logMessage(" -> Homing realizado com sucesso");
+    else
+        emit logMessage(" -> Erro na operaração homing");
+
 
 }
 
@@ -316,6 +328,7 @@ minas_control::MinasInput ServoMinas::readInput(){
     if(client)
 {
         input = client->readInputs();
+        emit dataChanged();
         return  input;
     }
     else{
@@ -325,21 +338,7 @@ minas_control::MinasInput ServoMinas::readInput(){
     }
 
 }
-minas_control::MinasOutput ServoMinas::readOutput(){
-    QString message;
-    minas_control::MinasOutput output;
 
-    if(client)
-    {
-        output = client->readOutputs();
-        return  output;
-    }
-    else{
-        message =  "Cliente não inicializado. Não é possível fazer a leitura das saídas.";
-        emit logMessage(message);
-        return output;
-    }
-}
 
 void ServoMinas::setActualPosition(uint32_t value){    this->actual_position = value;     }
 
