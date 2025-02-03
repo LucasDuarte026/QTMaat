@@ -628,11 +628,39 @@
      <height>23</height>
     </rect>
    </property>
+   <widget class="QMenu" name="menuFile">
+    <property name="enabled">
+     <bool>true</bool>
+    </property>
+    <property name="cursor">
+     <cursorShape>PointingHandCursor</cursorShape>
+    </property>
+    <property name="title">
+     <string>Maat</string>
+    </property>
+    <addaction name="separator"/>
+   </widget>
+   <widget class="QMenu" name="menuSensor">
+    <property name="enabled">
+     <bool>true</bool>
+    </property>
+    <property name="cursor">
+     <cursorShape>PointingHandCursor</cursorShape>
+    </property>
+    <property name="title">
+     <string>Software</string>
+    </property>
+   </widget>
    <widget class="QMenu" name="menuteste">
     <property name="title">
      <string>Usuários</string>
     </property>
     <addaction name="actionteste2"/>
+    <addaction name="separator"/>
+    <addaction name="actionVer_usu_rios"/>
+    <addaction name="actionAdicionar_2"/>
+    <addaction name="actionAtualizar_2"/>
+    <addaction name="actionRemover_2"/>
    </widget>
    <widget class="QMenu" name="menuSensores">
     <property name="title">
@@ -643,13 +671,15 @@
     <addaction name="actionAtualizar"/>
     <addaction name="actionRemover"/>
    </widget>
+   <addaction name="menuFile"/>
+   <addaction name="menuSensor"/>
    <addaction name="menuteste"/>
    <addaction name="menuSensores"/>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
   <action name="actionteste2">
    <property name="text">
-    <string>Fazer login</string>
+    <string>Login</string>
    </property>
   </action>
   <action name="actionVer_Sensores">
@@ -668,6 +698,26 @@
    </property>
   </action>
   <action name="actionRemover">
+   <property name="text">
+    <string>Remover</string>
+   </property>
+  </action>
+  <action name="actionVer_usu_rios">
+   <property name="text">
+    <string>Ver usuários</string>
+   </property>
+  </action>
+  <action name="actionAdicionar_2">
+   <property name="text">
+    <string>Adicionar</string>
+   </property>
+  </action>
+  <action name="actionAtualizar_2">
+   <property name="text">
+    <string>Atualizar</string>
+   </property>
+  </action>
+  <action name="actionRemover_2">
    <property name="text">
     <string>Remover</string>
    </property>

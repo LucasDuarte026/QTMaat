@@ -21,10 +21,11 @@ MainWindow::MainWindow(QWidget *parent)
     ui->setupUi(this); // configurar e iniciar os elementos definidos em UI
     setWindowTitle("Ma'at");
 
-        // Configuração da barra de menu para Linux
-
-
+    // Configuração da barra de menu para Linux
     ui->menubar->setNativeMenuBar(false);
+
+    // Criação da classe que cuida dos usuários
+    usersHandler = new UsersHandler(this);
 
     myDial = ui->dial_elements->findChild<QDial*>("plan_dial"); // usando o dial criado no UI
     myInsertDegree = ui->degreeInsertDial;
@@ -47,16 +48,8 @@ MainWindow::MainWindow(QWidget *parent)
     // Animar Dial com simulação de operação
     connect(ui->animate_dial_button, &QPushButton::clicked, this, &MainWindow::by_animate_dial_button_action);
 
-    //  Atualizar em tempo real o atual valor atual do servo motor
 
 
-    // usar sinal
-
-    // connect(myDial, &QDial::valueChanged, this, [this](){
-    //     // ui->actual_dial_degree->setText(QString::number(myDial->value(),'f',4)+"º");
-    //     ui->actual_dial_degree->setText(QString::number(myServo->actual_position));
-
-    // });
     connect(myInsertDegree, &QLineEdit::returnPressed, this, &MainWindow::insertedAngleToAchieve);
 
     {// botões de limpeza e de filtro da aba de logs gerais
@@ -111,6 +104,7 @@ MainWindow::MainWindow(QWidget *parent)
     // Operações no servo
     connect(ui->homing_button, &QPushButton::clicked, this, &MainWindow::startHoming);
     connect(ui->clear_errors, &QPushButton::clicked, this, &MainWindow::clearServoErrors);
+
     //  Atualização dos dados da tela em função da modificação do input or output do servo vindo do PDO
     connect(myServo, &ServoMinas::dataChanged,this, &MainWindow::updateActualServoData);
 
@@ -506,6 +500,48 @@ void MainWindow::configDial(QDial *_myDial){
 
 
 }
+
+// Login button ativo -> credenciar o usuário
+void MainWindow::on_actionlogin_triggered()
+{
+    UserLogin loginDialog(this);
+    if (loginDialog.exec() == QDialog::Accepted) {
+
+        // Update status bar with logged in user
+        QString statusMessage = QString("Usuário logado: %1 (%2)")
+                                    .arg(loginDialog.getUserType())
+                                    .arg(loginDialog.getUsername());
+        ui->statusbar->showMessage(statusMessage);
+
+        QMessageBox::information(this, "Login bem-sucedido",
+                                 QString("Bem-vindo, %1!\nTipo de usuário: %2")
+                                     .arg(loginDialog.getUsername())
+                                     .arg(loginDialog.getUserType()));
+    }
+}
+
+// CRUD de usuários:
+void MainWindow::on_actionVer_usu_rios_triggered()
+{
+    // usersHandler->showViewUsersDialog();
+}
+
+void MainWindow::on_actionAdicionar_2_triggered()
+{
+    usersHandler->showAddUserDialog();
+}
+
+void MainWindow::on_actionRemover_2_triggered()
+{
+    // usersHandler->showRemoveUserDialog();
+}
+
+void MainWindow::on_actionAtualizar_2_triggered()
+{
+    // usersHandler->showUpdateUserDialog();
+}
+
+
 
 // Funcionalidades relacionada ao micronas
 

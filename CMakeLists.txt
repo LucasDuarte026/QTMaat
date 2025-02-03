@@ -50,6 +50,9 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
         logservowindow.h logservowindow.cpp
         loghandler.h loghandler.cpp
         updatesensordialog.h updatesensordialog.cpp
+        userlogin.h userlogin.cpp
+        usershandler.h usershandler.cpp
+
 
 
 
