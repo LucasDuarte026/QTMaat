@@ -16,7 +16,6 @@
 #include "servominas.h"
 #include "logservowindow.h"
 #include "loghandler.h"
-#include "userlogin.h"
 #include "usershandler.h"
 
 
@@ -52,7 +51,7 @@ private slots:
     void on_actionRemover_triggered();
 
     // Login e CRUD de usuários
-    void on_actionlogin_triggered();
+    void on_login_menuBar_triggered();
     void on_actionVer_usu_rios_triggered();
     void on_actionAdicionar_2_triggered();
     void on_actionAtualizar_2_triggered();
@@ -85,6 +84,7 @@ private slots:
     void setSensorData(SensorData _data);
 
 
+
 private:
     Ui::MainWindow *ui;
     QDial *myDial;
@@ -104,9 +104,9 @@ private:
     //  Classe dos logins e CRUD de usuários
     UsersHandler *usersHandler;
 
-
     ServoMinas *myServo;
 
+    UserType myUser;  // Guarda o nome do usuário e sua permissão de acesso na página
     double actual_servo_value;
     bool timerState;    //  Variavel para controle do estado do servo para controle de ligar e desligá-lo
     bool servoUP;

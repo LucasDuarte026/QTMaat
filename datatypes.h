@@ -6,4 +6,9 @@ struct SensorData {
     double arrive_angle;
     QString turn_direction;
 };
+struct UserType {
+    QString username;
+    QString type;  // prod // qual //admin //eng
+
+};
 #endif // DATATYPES_H

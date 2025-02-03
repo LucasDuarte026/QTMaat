@@ -15,11 +15,12 @@ MainWindow::MainWindow(QWidget *parent)
     , logServoWindow(nullptr) // ponteiro para a janela de log dentro da mainWindow
     , timerState(true)
     , servoUP(false)          // bool que comunica o estado do servo (se está apto a ser usado)
-
+    , myUser{"Usuário comum","prod"}
 {
 // config section
     ui->setupUi(this); // configurar e iniciar os elementos definidos em UI
     setWindowTitle("Ma'at");
+
 
     // Configuração da barra de menu para Linux
     ui->menubar->setNativeMenuBar(false);
@@ -502,28 +503,17 @@ void MainWindow::configDial(QDial *_myDial){
 }
 
 // Login button ativo -> credenciar o usuário
-void MainWindow::on_actionlogin_triggered()
+void MainWindow::on_login_menuBar_triggered()
 {
-    UserLogin loginDialog(this);
-    if (loginDialog.exec() == QDialog::Accepted) {
-
-        // Update status bar with logged in user
-        QString statusMessage = QString("Usuário logado: %1 (%2)")
-                                    .arg(loginDialog.getUserType())
-                                    .arg(loginDialog.getUsername());
-        ui->statusbar->showMessage(statusMessage);
-
-        QMessageBox::information(this, "Login bem-sucedido",
-                                 QString("Bem-vindo, %1!\nTipo de usuário: %2")
-                                     .arg(loginDialog.getUsername())
-                                     .arg(loginDialog.getUserType()));
-    }
+    myUser= usersHandler->loginAccess();
+    ui->permission_label->setText(myUser.type);
+    ui->user_label->setText(myUser.username);
 }
 
 // CRUD de usuários:
 void MainWindow::on_actionVer_usu_rios_triggered()
 {
-    // usersHandler->showViewUsersDialog();
+    usersHandler->showViewUsersDialog();
 }
 
 void MainWindow::on_actionAdicionar_2_triggered()
@@ -668,9 +658,6 @@ QString MainWindow::getTurnDirection()
 {
     return this->sensorData.turn_direction ;
 }
-
-
-
 
 
 

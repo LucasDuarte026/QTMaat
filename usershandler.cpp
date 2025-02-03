@@ -1,4 +1,7 @@
 #include "usershandler.h"
+#include <QTableWidget>
+#include <QTableView>
+#include <QHeaderView>
 #include <QDialog>
 #include <QComboBox>
 #include <QLineEdit>
@@ -12,9 +15,13 @@
 #include <QDateTime>
 #include <QList>
 #include <QStringList>
-#include <algorithm>
 
-UsersHandler::UsersHandler(QObject *parent) : QObject(parent)
+
+UsersHandler::UsersHandler(QObject *parent)
+    : QObject(parent)
+    , user_type("prod")
+    , username("comum")
+    , password("----")
 {
 }
 
@@ -22,6 +29,7 @@ UsersHandler::~UsersHandler()
 {
 }
 
+//  Abrir a janela de adicionar um usuário
 void UsersHandler::showAddUserDialog()
 {
     QDialog *dialog = new QDialog();
@@ -99,7 +107,7 @@ void UsersHandler::showAddUserDialog()
 
     dialog->close();
 }
-
+//  Criar o cabeçlho
 void UsersHandler::createFileWithHeader(const QString& filePath) {
     QFile file(filePath);
     if (!file.exists()) {
@@ -112,8 +120,7 @@ void UsersHandler::createFileWithHeader(const QString& filePath) {
         }
     }
 }
-
-
+//  Função acessora de inserir o usuário previamente filtrado no banco de dados
 bool UsersHandler::addUser(const QString &type, const QString &userName, const QString &password)
 {
     QString filePath = QDir::currentPath() + "/user_credentials.csv";
@@ -205,4 +212,196 @@ bool UsersHandler::addUser(const QString &type, const QString &userName, const Q
     }
 }
 
+void UsersHandler::showViewUsersDialog() {
+    // Criando a janela de diálogo
+    QDialog *dialog = new QDialog();
+    dialog->setWindowTitle("Lista de Usuários");
+    dialog->resize(500, 400);
 
+    // Criando a tabela
+    QTableWidget *tableWidget = new QTableWidget(dialog);
+    tableWidget->setColumnCount(3); // Exibir apenas tipo, nome de usuário e data de modificação
+    tableWidget->setHorizontalHeaderLabels({"Tipo", "Nome de Usuário", "Data de Modificação"});
+    tableWidget->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
+    tableWidget->setEditTriggers(QAbstractItemView::NoEditTriggers); // Impede edição da tabela
+
+    // Criando botão de fechar
+    QPushButton *closeButton = new QPushButton("Fechar", dialog);
+
+    // Layout
+    QVBoxLayout *layout = new QVBoxLayout(dialog);
+    layout->addWidget(tableWidget);
+    layout->addWidget(closeButton);
+    dialog->setLayout(layout);
+    try {
+
+        // Carregar os dados do CSV
+        QString filePath = QDir::currentPath() + "/user_credentials.csv";
+        QFile file(filePath);
+
+        if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
+            QMessageBox::critical(dialog, "Erro", "Erro ao abrir o arquivo de usuários.");
+            return;
+        }
+
+        QTextStream stream(&file);
+        QString header = stream.readLine(); // Ignorar o cabeçalho
+
+        QList<QStringList> users;
+
+        while (!stream.atEnd()) {
+            QString line = stream.readLine();
+            QStringList fields = line.split(',');
+
+            if (fields.size() >= 4) {
+                QStringList userData;
+                userData << fields[0] << fields[1] << fields[3]; // Tipo, Nome, Data de Modificação
+                users.append(userData);
+            }
+        }
+
+        file.close();
+
+        // Ordenar os usuários primeiro por tipo, depois por nome
+        std::sort(users.begin(), users.end(), [](const QStringList &a, const QStringList &b) {
+            return a[0] == b[0] ? a[1] < b[1] : a[0] < b[0];
+        });
+
+        // Preencher a tabela
+        tableWidget->setRowCount(users.size());
+        for (int i = 0; i < users.size(); ++i) {
+            for (int j = 0; j < 3; ++j) {
+                tableWidget->setItem(i, j, new QTableWidgetItem(users[i][j]));
+            }
+        }
+    }
+    catch (const std::runtime_error& error) {
+        QMessageBox::critical(dialog, "Erro", error.what());
+        return; // Importante: sair da função em caso de erro
+    } catch (const std::exception& error) {
+        QMessageBox::critical(dialog, "Erro", error.what());
+        return; // Importante: sair da função em caso de erro
+    } catch (...) {
+        QMessageBox::critical(dialog, "Erro", "Ocorreu um erro desconhecido.");
+        return; // Importante: sair da função em caso de erro
+    }
+    // Conectar botão de fechar
+    connect(closeButton, &QPushButton::clicked, dialog, &QDialog::accept);
+
+    // Exibir a janela
+    dialog->exec();
+}
+
+
+UserType UsersHandler::loginAccess() {
+    UserType _user;
+    _user.username = "comum";
+    _user.type = "prod";
+
+    QDialog dialog;
+    dialog.setWindowTitle("Login de Usuário");
+
+    QComboBox *userTypeCombo = new QComboBox;
+    userTypeCombo->addItem("Administrador");
+    userTypeCombo->addItem("Engenharia");
+    userTypeCombo->addItem("Produção");
+    userTypeCombo->addItem("Qualidade");
+
+    QLineEdit *usernameEdit = new QLineEdit;
+    usernameEdit->setPlaceholderText("Nome de Usuário");
+
+    QLineEdit *passwordEdit = new QLineEdit;
+    passwordEdit->setPlaceholderText("Senha");
+    passwordEdit->setEchoMode(QLineEdit::Password);
+
+    QPushButton *okButton = new QPushButton("OK");
+    QPushButton *cancelButton = new QPushButton("Cancelar");
+
+    QVBoxLayout *mainLayout = new QVBoxLayout(&dialog);
+    QFormLayout *formLayout = new QFormLayout();
+    formLayout->addRow("Tipo:", userTypeCombo);
+    formLayout->addRow("Usuário:", usernameEdit);
+    formLayout->addRow("Senha:", passwordEdit);
+
+    QHBoxLayout *buttonLayout = new QHBoxLayout;
+    buttonLayout->addWidget(okButton);
+    buttonLayout->addWidget(cancelButton);
+
+    mainLayout->addLayout(formLayout);
+    mainLayout->addLayout(buttonLayout);
+    dialog.setLayout(mainLayout);
+
+    connect(cancelButton, &QPushButton::clicked, &dialog, &QDialog::reject);
+
+    connect(okButton, &QPushButton::clicked, [&]() {
+        QString enteredType = userTypeCombo->currentText();
+        QString enteredUsername = usernameEdit->text().trimmed();
+        QString enteredPassword = passwordEdit->text();
+
+        QString filePath = QDir::currentPath() + "/user_credentials.csv";
+        QFile file(filePath);
+
+        if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
+            QMessageBox::critical(&dialog, "Erro", "Erro ao abrir o arquivo de credenciais.");
+            return;
+        }
+
+        QTextStream stream(&file);
+        stream.readLine(); // Ignora o cabeçalho
+
+        bool userFound = false;
+        bool passwordCorrect = false;
+
+        while (!stream.atEnd()) {
+            QString line = stream.readLine();
+            QStringList fields = line.split(',');
+
+            if (fields.size() >= 4 && fields[1] == enteredUsername) {
+                userFound = true;
+                if (fields[0] == enteredType && fields[2] == enteredPassword) {
+                    passwordCorrect = true;
+                    _user.type = enteredType;
+                    _user.username = enteredUsername;
+                    break; // Sai do loop após encontrar o usuário e senha corretos
+                }
+            }
+        }
+
+        file.close();
+
+        if (!userFound) {
+            QMessageBox::warning(&dialog, "Erro", "Usuário não cadastrado.");
+        } else if (!passwordCorrect) {
+            QMessageBox::warning(&dialog, "Erro", "Credenciais incorretas. Tente novamente.");
+        } else {
+            QMessageBox::information(&dialog, "Sucesso", QString("Login realizado com sucesso!\nUsuário: %1\nTipo: %2").arg(_user.username, _user.type));
+            dialog.accept(); // Aceita o diálogo apenas em caso de sucesso
+        }
+    });
+
+    if (dialog.exec() == QDialog::Accepted) {
+        return _user;
+    } else {
+        return {"comum", "prod"}; // Retorna um usuário padrão se o login for cancelado
+    }
+}
+
+UserType UsersHandler::getFullUser() const
+{
+    return full_user;
+}
+
+QString UsersHandler::getUserType() const
+{
+    return user_type;
+}
+
+QString UsersHandler::getUsername() const
+{
+    return username;
+}
+
+QString UsersHandler::getPassword() const
+{
+    return password;
+}
