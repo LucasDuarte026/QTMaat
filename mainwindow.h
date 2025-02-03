@@ -8,6 +8,10 @@
 #include <QTimer>
 #include <QDoubleSpinBox>
 #include "sensorselectionwindow.h"
+#include "addsensordialog.h"
+#include "removesensordialog.h"
+#include "viewsensorsdialog.h"
+#include "updatesensordialog.h"
 #include "datatypes.h"
 #include "servominas.h"
 #include "logservowindow.h"
@@ -40,6 +44,7 @@ private slots:
 
     void on_actionVer_Sensores_triggered();
     void on_actionAdicionar_triggered();
+    void on_actionAtualizar_triggered();
     void on_actionRemover_triggered();
 
     void by_animate_dial_button_action();

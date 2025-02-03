@@ -1,9 +1,6 @@
 #include "mainwindow.h"
 #include "./ui_mainwindow.h"
-#include "sensorselectionwindow.h"
-#include "addsensordialog.h"
-#include "removesensordialog.h"
-#include "viewsensorsdialog.h"
+
 
 
 
@@ -271,6 +268,57 @@ void MainWindow::on_actionAdicionar_triggered()
             QMessageBox::critical(this, "Erro", "Não foi possível abrir o arquivo CSV para escrita.");
         }
     }
+}
+
+void MainWindow::on_actionAtualizar_triggered()
+{
+    // Create and show sensor selection window
+    SensorSelectionWindow *selectionWindow = new SensorSelectionWindow(this);
+    connect(selectionWindow, &SensorSelectionWindow::sensorSelected, this, [this](SensorData *selectedSensor) {
+        if (selectedSensor) {
+            // Create and show update dialog with current sensor data
+            UpdateSensorDialog updateDialog(*selectedSensor, this);
+            if (updateDialog.exec() == QDialog::Accepted) {
+                // Read the CSV file
+                QFile file("sensors.csv");
+                if (!file.open(QIODevice::ReadWrite | QIODevice::Text)) {
+                    QMessageBox::critical(this, "Erro", "Não foi possível abrir o arquivo sensors.csv");
+                    return;
+                }
+
+                // Read all lines
+                QStringList lines;
+                QTextStream in(&file);
+                QString header = in.readLine(); // Save header
+                lines.append(header);
+
+                while (!in.atEnd()) {
+                    QString line = in.readLine();
+                    QStringList fields = line.split(',');
+                    if (fields.size() >= 4 && fields[0] == selectedSensor->model_name) {
+                        // Replace this line with updated data
+                        line = QString("%1,%2,%3,%4")
+                                   .arg(updateDialog.getModelName())
+                                   .arg(updateDialog.getStartAngle())
+                                   .arg(updateDialog.getEndAngle())
+                                   .arg(updateDialog.getRotationDirection());
+                    }
+                    lines.append(line);
+                }
+
+                // Write back to file
+                file.resize(0);
+                QTextStream out(&file);
+                for (const QString &line : lines) {
+                    out << line << "\n";
+                }
+
+                file.close();
+                QMessageBox::information(this, "Sucesso", "Sensor atualizado com sucesso!");
+            }
+        }
+    });
+    selectionWindow->show();
 }
 
 void MainWindow::on_actionRemover_triggered()
