@@ -10,7 +10,7 @@ MainWindow::MainWindow(QWidget *parent)
     , myServo(nullptr)        // ponteiro para a classe que controla o servo
     , logServoWindow(nullptr) // ponteiro para a janela de log dentro da mainWindow
     , servoUP(false)          // bool que comunica o estado do servo (se está apto a ser usado)
-    , myUser{"Usuário comum","prod"}
+    , myUser{"Usuário comum","Produção"}
 {
 
     ui->setupUi(this); // configurar e iniciar os elementos definidos em UI
@@ -500,7 +500,7 @@ void MainWindow::configDial(QDial *_myDial){
 // Login button ativo -> credenciar o usuário
 void MainWindow::on_login_menuBar_triggered()
 {
-    myUser= usersHandler->loginAccess();
+    myUser = usersHandler->loginAccess();
     ui->permission_label->setText(myUser.type);
     ui->user_label->setText(myUser.username);
 }
@@ -508,22 +508,35 @@ void MainWindow::on_login_menuBar_triggered()
 // CRUD de usuários:
 void MainWindow::on_actionVer_usu_rios_triggered()
 {
-    usersHandler->showViewUsersDialog();
+    usersHandler->showViewUsersDialog(myUser);
 }
 
 void MainWindow::on_actionAdicionar_2_triggered()
 {
-    usersHandler->showAddUserDialog();
+    if(myUser.type == "Administrador")
+        usersHandler->showAddUserDialog(myUser);
+    else
+        QMessageBox::information(this,"Permissão negada", "Este tipo de operação só pode ser executada pelo Administrador");
 }
 
 void MainWindow::on_actionRemover_2_triggered()
 {
-    usersHandler->showRemoveUserDialog();
+    if(myUser.type == "Administrador")
+        usersHandler->showRemoveUserDialog(myUser);
+    else
+        QMessageBox::information(this,"Permissão negada", "Este tipo de operação só pode ser executada pelo Administrador");
+
 }
 
 void MainWindow::on_actionAtualizar_2_triggered()
 {
-    usersHandler->showUpdateUserDialog();
+    if(myUser.username == "Usuário comum"){
+        QMessageBox::information(this,"Permissão negada", "Para atualizar, faça login!");
+
+    }
+    else{
+        usersHandler->showUpdateUserDialog(myUser);
+    }
 }
 
 
@@ -597,7 +610,7 @@ void MainWindow::insertedAngleToAchieve(){
     {
         velocity = ui->servo_velocity_setup->text().toDouble();
     }
-    if(ok && insertedValue<= sensorData.arrive_angle && insertedValue>=sensorData.start_angle){
+    if(ok && insertedValue <= sensorData.arrive_angle && insertedValue>=sensorData.start_angle){
         myServo->moveAbsoluteTo(insertedValue,velocity  );
         myDial->setValue(insertedValue);
     }
@@ -641,14 +654,17 @@ QString MainWindow::getModelName()
 {
     return this->sensorData.model_name ;
 }
+
 double MainWindow::getStartAngle()
 {
     return this->sensorData.start_angle;
 }
+
 double MainWindow::getArriveAngle()
 {
     return this->sensorData.arrive_angle;
 }
+
 QString MainWindow::getTurnDirection()
 {
     return this->sensorData.turn_direction ;
