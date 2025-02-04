@@ -172,6 +172,10 @@ void MainWindow::by_sensorSelected_action()
 
 void MainWindow::on_actionAdicionar_triggered()
 {
+    if(myUser.type != "Administrador" && myUser.type != "Engenharia"){
+        QMessageBox::information(this,"Permissão negada", "Este tipo de operação só pode ser executada pelo Administrador ou pela Engenharia");
+        return;
+    }
     // Caminho do arquivo CSV no diretório raiz do projeto
     QString filePath = QCoreApplication::applicationDirPath() + "/sensors.csv";
 
@@ -262,6 +266,10 @@ void MainWindow::on_actionAdicionar_triggered()
 
 void MainWindow::on_actionAtualizar_triggered()
 {
+    if(myUser.type != "Administrador" && myUser.type != "Engenharia"){
+        QMessageBox::information(this,"Permissão negada", "Este tipo de operação só pode ser executada pelo Administrador ou pela Engenharia");
+        return;
+    }
     // Create and show sensor selection window
     SensorSelectionWindow *selectionWindow = new SensorSelectionWindow(this);
     connect(selectionWindow, &SensorSelectionWindow::sensorSelected, this, [this](SensorData *selectedSensor) {
@@ -313,6 +321,10 @@ void MainWindow::on_actionAtualizar_triggered()
 
 void MainWindow::on_actionRemover_triggered()
 {
+    if(myUser.type != "Administrador"){
+        QMessageBox::information(this,"Permissão negada", "Este tipo de operação só pode ser executada pelo Administrador");
+        return;
+    }
     // Caminho do arquivo CSV no diretório raiz do projeto
     QString filePath = QCoreApplication::applicationDirPath() + "/sensors.csv";
 
@@ -504,6 +516,15 @@ void MainWindow::on_login_menuBar_triggered()
     ui->permission_label->setText(myUser.type);
     ui->user_label->setText(myUser.username);
 }
+// Logout button ativo -> sair do usuário
+void MainWindow::on_actionLogout_triggered()
+{
+    myUser.username = "Usuário comum";
+    myUser.type     = "Produção";
+    ui->permission_label->setText(myUser.type);
+    ui->user_label->setText(myUser.username);
+}
+
 
 // CRUD de usuários:
 void MainWindow::on_actionVer_usu_rios_triggered()
@@ -669,6 +690,8 @@ QString MainWindow::getTurnDirection()
 {
     return this->sensorData.turn_direction ;
 }
+
+
 
 
 

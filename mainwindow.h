@@ -92,6 +92,8 @@ private slots:
 
 
 
+    void on_actionLogout_triggered();
+
 private:
     // ponteiros para as estruturas a baixo da janela principal
     Ui::MainWindow *ui;

@@ -53,7 +53,7 @@
           </widget>
          </item>
          <item>
-          <widget class="QGroupBox" name="">
+          <widget class="QGroupBox" name="groupBox">
            <layout class="QVBoxLayout" name="verticalLayout_16">
             <item alignment="Qt::AlignmentFlag::AlignHCenter">
              <widget class="QLabel" name="user_label">
@@ -717,6 +717,7 @@
      <string>Usuários</string>
     </property>
     <addaction name="login_menuBar"/>
+    <addaction name="actionLogout"/>
     <addaction name="separator"/>
     <addaction name="actionVer_usu_rios"/>
     <addaction name="actionAdicionar_2"/>
@@ -781,6 +782,11 @@
   <action name="actionRemover_2">
    <property name="text">
     <string>Remover</string>
+   </property>
+  </action>
+  <action name="actionLogout">
+   <property name="text">
+    <string>Logout</string>
    </property>
   </action>
  </widget>
