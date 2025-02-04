@@ -1,5 +1,6 @@
 #include "usershandler.h"
 #include <QTableWidget>
+#include <QObject>
 #include <QTableView>
 #include <QHeaderView>
 #include <QDialog>
@@ -15,6 +16,7 @@
 #include <QDateTime>
 #include <QList>
 #include <QStringList>
+#include <QLabel>
 
 
 UsersHandler::UsersHandler(QObject *parent)
@@ -212,6 +214,7 @@ bool UsersHandler::addUser(const QString &type, const QString &userName, const Q
     }
 }
 
+// Função para visualização dos usuários cadastrados
 void UsersHandler::showViewUsersDialog() {
     // Criando a janela de diálogo
     QDialog *dialog = new QDialog();
@@ -292,6 +295,280 @@ void UsersHandler::showViewUsersDialog() {
     dialog->exec();
 }
 
+//  Remove usuário
+void UsersHandler::showRemoveUserDialog() {
+    QString filePath = "user_credentials.csv"; // Caminho do arquivo CSV
+
+    // Tenta abrir o arquivo CSV
+    QVector<QStringList> userData;
+    try {
+        QFile file(filePath);
+        if (!file.open(QIODevice::ReadOnly)) {
+            QMessageBox::critical(nullptr, "Erro", "Não foi possível abrir o arquivo CSV.");
+            return; // Sai da função se não conseguir abrir o arquivo
+        }
+
+        QTextStream in(&file);
+        in.readLine(); // Pula o cabeçalho
+        while (!in.atEnd()) {
+            userData.append(in.readLine().split(",")); // Lê os dados do CSV
+        }
+        file.close();
+    } catch (const std::exception& error) {
+        QMessageBox::critical(nullptr, "Erro", QString("Erro ao ler o arquivo: %1").arg(error.what()));
+        return; // Sai da função em caso de erro
+    } catch (...) {
+        QMessageBox::critical(nullptr, "Erro", "Ocorreu um erro desconhecido ao tentar abrir o arquivo.");
+        return; // Sai da função em caso de erro desconhecido
+    }
+
+    // Cria a interface do diálogo
+    QDialog *dialog = new QDialog();
+    dialog->setWindowTitle("Remover Usuário");
+    dialog->resize(300,150);
+
+    QComboBox *userComboBox = new QComboBox(dialog);
+    QPushButton *removeButton = new QPushButton("Remover", dialog);
+    QPushButton *cancelButton = new QPushButton("Cancelar", dialog);
+
+    // layout principal
+    QVBoxLayout *mainLayout = new QVBoxLayout(dialog);
+
+    // Label e combo box
+    QHBoxLayout *selectionLayout = new QHBoxLayout();
+    selectionLayout->addWidget(new QLabel("Selecione o usuário:"));
+    selectionLayout->addWidget(userComboBox);
+    mainLayout->addLayout(selectionLayout);
+
+    // bottons abaico
+    QHBoxLayout *buttonLayout = new QHBoxLayout(dialog);
+    buttonLayout->addWidget(removeButton);
+    buttonLayout->addWidget(cancelButton);
+    mainLayout->addLayout(buttonLayout);
+
+    // Preenche o ComboBox com os usuários
+    for (const QStringList& user : userData) {
+        if (user.size() > 1) { // Verifica se há pelo menos um nome de usuário
+            userComboBox->addItem(user[1]); // Adiciona o nome do usuário ao ComboBox
+        }
+    }
+
+
+
+    // Conectar os sinais dos botões
+    connect(cancelButton, &QPushButton::clicked, dialog, &QDialog::reject);
+
+    connect(removeButton, &QPushButton::clicked, [&, dialog, userComboBox, filePath, userData]() mutable {
+        QString selectedUser = userComboBox->currentText();
+
+        // Verifica se um usuário foi selecionado
+        if (selectedUser.isEmpty()) {
+            QMessageBox::warning(dialog, "Erro", "Selecione um usuário para remover.");
+            return;
+        }
+
+        // Confirmação de remoção
+        if (QMessageBox::question(dialog, "Confirmação"
+                                        , QString("Deseja realmente remover o usuário %1?").arg(selectedUser)
+                                        , QMessageBox::Yes | QMessageBox::No
+                                        , QMessageBox::No)
+                != QMessageBox::Yes)
+        {
+            return; // Aborta a operação se o usuário não confirmar
+        }
+
+        // Remove o usuário selecionado do QVector
+        userData.erase(std::remove_if(userData.begin(), userData.end(),
+                                      [selectedUser](const QStringList& row) {
+                                          return row.size() > 1 && row[1] == selectedUser;
+                                      }), userData.end());
+
+        // Tenta reescrever o arquivo CSV
+        try {
+            QFile file(filePath);
+            if (!file.open(QIODevice::WriteOnly)) {
+                QMessageBox::critical(dialog, "Erro", "Não foi possível salvar as alterações no arquivo.");
+                return;
+            }
+
+            QTextStream out(&file);
+            out << "user_type,username,password,changed_date\n"; // Escreve o cabeçalho
+            for (const QStringList& row : userData) {
+                out << row.join(",") << "\n"; // Escreve os dados atualizados
+            }
+            file.close();
+
+            QMessageBox::information(dialog, "Sucesso", "Usuário removido com sucesso.");
+            dialog->accept(); // Fecha o diálogo após a remoção bem-sucedida
+        } catch (const std::exception& error) {
+            QMessageBox::critical(dialog, "Erro", QString("Erro ao salvar o arquivo: %1").arg(error.what()));
+        } catch (...) {
+            QMessageBox::critical(dialog, "Erro", "Ocorreu um erro desconhecido ao tentar salvar o arquivo.");
+        }
+    });
+
+    dialog->exec(); // Exibe o diálogo
+}
+
+//  Atualizar usuário
+
+void UsersHandler::showUpdateUserDialog() {
+    QString filePath = "user_credentials.csv";
+
+    // Carregar os dados do CSV em um QVector de QStringList
+    QVector<QStringList> userData;
+    try {
+        QFile file(filePath);
+        if (!file.open(QIODevice::ReadOnly)) {
+            QMessageBox::critical(nullptr, "Erro", "Não foi possível abrir o arquivo CSV.");
+            return;
+        }
+
+        QTextStream in(&file);
+        in.readLine(); // Pular o cabeçalho
+        while (!in.atEnd()) {
+            userData.append(in.readLine().split(","));
+        }
+        file.close();
+    } catch (const std::exception& error) {
+        QMessageBox::critical(nullptr, "Erro", QString("Erro ao ler o arquivo: %1").arg(error.what()));
+        return;
+    } catch (...) {
+        QMessageBox::critical(nullptr, "Erro", "Ocorreu um erro desconhecido ao tentar abrir o arquivo.");
+        return;
+    }
+
+    // Criar a janela de seleção de usuário
+    QDialog*selectDialog = new QDialog();
+    selectDialog->setWindowTitle("Selecionar Usuário para update");
+
+    QComboBox *userComboBox = new QComboBox(selectDialog);
+    QPushButton *selectButton = new QPushButton("Selecionar",selectDialog);
+    QPushButton *cancelButton = new QPushButton("Cancelar",selectDialog);
+
+    // layout principal
+
+    QVBoxLayout *selectLayout = new QVBoxLayout(selectDialog);
+    selectLayout->addWidget(userComboBox);
+
+    // Label e combo box
+    QHBoxLayout *selectionLayout = new QHBoxLayout();
+    selectionLayout->addWidget(new QLabel("Selecione o usuário para update:"));
+    selectionLayout->addWidget(userComboBox);
+    selectLayout->addLayout(selectionLayout);
+
+    // bottons abaico
+    QHBoxLayout *buttonLayout = new QHBoxLayout(selectDialog);
+    buttonLayout->addWidget(selectButton);
+    buttonLayout->addWidget(cancelButton);
+    selectLayout->addLayout(buttonLayout);
+    // Preencher o ComboBox com os usuários
+    for (const QStringList& user : userData) {
+        if (user.size() > 1) {
+            userComboBox->addItem(user[1]);
+        }
+    }
+
+    connect(cancelButton, &QPushButton::clicked, selectDialog, &QDialog::reject);
+    connect(selectButton, &QPushButton::clicked, [&, this, selectDialog, userData]() {
+        QString selectedUser = userComboBox->currentText();
+
+        if (selectedUser.isEmpty()) {
+            QMessageBox::warning(selectDialog, "Erro", "Selecione um usuário.");
+            return;
+        }
+
+        // Abrir a janela de atualização
+        QDialog *updateDialog = new QDialog(selectDialog);
+        updateDialog->setWindowTitle("Atualizar Usuário");
+
+        QComboBox *typeComboBox = new QComboBox;
+        typeComboBox->addItem("Administrador");
+        typeComboBox->addItem("Engenharia");
+        typeComboBox->addItem("Produção");
+        typeComboBox->addItem("Qualidade");
+
+        QLineEdit *userNameEdit = new QLineEdit(selectedUser);
+        QLineEdit *passwordEdit = new QLineEdit();
+        passwordEdit->setEchoMode(QLineEdit::Password);
+
+        QPushButton *updateButton = new QPushButton("Atualizar",updateDialog);
+        QPushButton *cancelUpdateButton = new QPushButton("Cancelar",updateDialog);
+
+        QVBoxLayout updateLayout(updateDialog);
+        QFormLayout formLayout;
+        formLayout.addRow("Tipo:", typeComboBox);
+        formLayout.addRow("Nome de Usuário:", userNameEdit);
+        formLayout.addRow("Senha:", passwordEdit);
+        updateLayout.addLayout(&formLayout);
+        updateLayout.addWidget(updateButton);
+        updateLayout.addWidget(cancelUpdateButton);
+
+        // Encontrar o índice do usuário selecionado
+        int selectedIndex = -1;
+        for (int i = 0; i < userData.size(); ++i) {
+            if (userData[i][1] == selectedUser) {
+                selectedIndex = i;
+                break;
+            }
+        }
+
+        if (selectedIndex != -1) {
+            typeComboBox->setCurrentText(userData[selectedIndex][0]); // Definir o tipo atual
+        }
+
+        connect(cancelUpdateButton, &QPushButton::clicked, updateDialog, &QDialog::reject);
+        connect(updateButton, &QPushButton::clicked, [&, this, updateDialog, userData, selectedIndex]() mutable {
+            QString newType = typeComboBox->currentText();
+            QString newUsername = userNameEdit->text().trimmed();
+            QString newPassword = passwordEdit->text();
+
+            // Validações
+            if (newUsername.isEmpty()) {
+                QMessageBox::critical(updateDialog, "Erro", "O nome de usuário não pode estar vazio.");
+                return;
+            }
+
+            if (newUsername.contains(" ")) {
+                QMessageBox::critical(updateDialog, "Erro", "O nome de usuário não pode ter espaços internos.");
+                return;
+            }
+
+            // Atualizar os dados do usuário
+            userData[selectedIndex][0] = newType;
+            userData[selectedIndex][1] = newUsername;
+            userData[selectedIndex][2] = newPassword;
+            userData[selectedIndex][3] = QDateTime::currentDateTime().toString("dd-MM-yyyy-hh:mm:ss");
+
+            // Reescrever o arquivo CSV
+            try {
+                QFile file(filePath);
+                if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) {
+                    QMessageBox::critical(updateDialog, "Erro", "Não foi possível salvar as alterações no arquivo.");
+                    return;
+                }
+
+                QTextStream out(&file);
+                out << "user_type,username,password,changed_date\n"; // Escreve o cabeçalho
+                for (const QStringList& row : userData) {
+                    out << row.join(",") << "\n"; // Escreve os dados atualizados
+                }
+                file.close();
+
+                QMessageBox::information(updateDialog, "Sucesso", "Usuário atualizado com sucesso.");
+                updateDialog->accept(); // Fecha o diálogo após a atualização bem-sucedida
+            } catch (const std::exception& error) {
+                QMessageBox::critical(updateDialog, "Erro", QString("Erro ao salvar o arquivo: %1").arg(error.what()));
+            } catch (...) {
+                QMessageBox::critical(updateDialog, "Erro", "Ocorreu um erro desconhecido ao tentar salvar o arquivo.");
+            }
+        });
+
+        updateDialog->exec();
+    });
+
+    selectDialog->exec();
+}
 
 UserType UsersHandler::loginAccess() {
     UserType _user;

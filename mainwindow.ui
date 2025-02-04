@@ -21,68 +21,75 @@
     <item>
      <layout class="QVBoxLayout" name="left_tab" stretch="0,0,0,10">
       <item>
-       <widget class="QFrame" name="frame_4">
-        <property name="frameShape">
-         <enum>QFrame::Shape::StyledPanel</enum>
+       <widget class="QGroupBox" name="horizontalGroupBox_2">
+        <property name="title">
+         <string>Permissão de acesso</string>
         </property>
-        <property name="frameShadow">
-         <enum>QFrame::Shadow::Raised</enum>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QFrame" name="frame_5">
-        <property name="frameShape">
-         <enum>QFrame::Shape::StyledPanel</enum>
-        </property>
-        <property name="frameShadow">
-         <enum>QFrame::Shadow::Raised</enum>
-        </property>
-        <layout class="QVBoxLayout" name="verticalLayout_16">
+        <layout class="QHBoxLayout" name="horizontalLayout_18">
          <item>
-          <layout class="QHBoxLayout" name="horizontalLayout_18">
-           <item>
-            <widget class="QLabel" name="label_2">
-             <property name="layoutDirection">
-              <enum>Qt::LayoutDirection::LeftToRight</enum>
-             </property>
-             <property name="text">
-              <string>Usuário:</string>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QLabel" name="user_label">
-             <property name="text">
-              <string>N/A</string>
-             </property>
-            </widget>
-           </item>
-          </layout>
+          <widget class="QFrame" name="verticalFrame">
+           <layout class="QVBoxLayout" name="verticalLayout_19">
+            <item alignment="Qt::AlignmentFlag::AlignRight">
+             <widget class="QLabel" name="label_2">
+              <property name="layoutDirection">
+               <enum>Qt::LayoutDirection::LeftToRight</enum>
+              </property>
+              <property name="text">
+               <string>Usuário:</string>
+              </property>
+             </widget>
+            </item>
+            <item alignment="Qt::AlignmentFlag::AlignRight">
+             <widget class="QLabel" name="label_8">
+              <property name="layoutDirection">
+               <enum>Qt::LayoutDirection::LeftToRight</enum>
+              </property>
+              <property name="text">
+               <string>Permissão:</string>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </widget>
          </item>
          <item>
-          <layout class="QHBoxLayout" name="horizontalLayout_19">
-           <item>
-            <widget class="QLabel" name="label_8">
-             <property name="layoutDirection">
-              <enum>Qt::LayoutDirection::LeftToRight</enum>
-             </property>
-             <property name="text">
-              <string>Permissão</string>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QLabel" name="permission_label">
-             <property name="text">
-              <string>N/A</string>
-             </property>
-            </widget>
-           </item>
-          </layout>
+          <widget class="QGroupBox" name="">
+           <layout class="QVBoxLayout" name="verticalLayout_16">
+            <item alignment="Qt::AlignmentFlag::AlignHCenter">
+             <widget class="QLabel" name="user_label">
+              <property name="text">
+               <string>N/A</string>
+              </property>
+             </widget>
+            </item>
+            <item alignment="Qt::AlignmentFlag::AlignHCenter">
+             <widget class="QLabel" name="permission_label">
+              <property name="text">
+               <string>N/A</string>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </widget>
          </item>
         </layout>
        </widget>
+      </item>
+      <item>
+       <spacer name="verticalSpacer">
+        <property name="orientation">
+         <enum>Qt::Orientation::Vertical</enum>
+        </property>
+        <property name="sizeType">
+         <enum>QSizePolicy::Policy::Fixed</enum>
+        </property>
+        <property name="sizeHint" stdset="0">
+         <size>
+          <width>20</width>
+          <height>20</height>
+         </size>
+        </property>
+       </spacer>
       </item>
       <item>
        <widget class="QGroupBox" name="sensorBox">
@@ -397,6 +404,9 @@
                    <widget class="QLabel" name="label">
                     <property name="text">
                      <string>Ângulo desejado:</string>
+                    </property>
+                    <property name="buddy">
+                     <cstring>degreeInsertDial</cstring>
                     </property>
                    </widget>
                   </item>
@@ -774,6 +784,27 @@
    </property>
   </action>
  </widget>
+ <tabstops>
+  <tabstop>sensorSelected</tabstop>
+  <tabstop>plan_dial</tabstop>
+  <tabstop>animate_dial_button</tabstop>
+  <tabstop>config_tag</tabstop>
+  <tabstop>init_servo_button</tabstop>
+  <tabstop>enable_servo_communication</tabstop>
+  <tabstop>degreeInsertDial</tabstop>
+  <tabstop>servo_velocity_setup</tabstop>
+  <tabstop>disable_servo_button</tabstop>
+  <tabstop>homing_button</tabstop>
+  <tabstop>clear_errors</tabstop>
+  <tabstop>tab_general</tabstop>
+  <tabstop>filter_servo_log</tabstop>
+  <tabstop>servo_log_screen</tabstop>
+  <tabstop>clean_log_button</tabstop>
+  <tabstop>filter_general_log</tabstop>
+  <tabstop>general_log_screen</tabstop>
+  <tabstop>clean_all_output</tabstop>
+  <tabstop>disable_servo_button_2</tabstop>
+ </tabstops>
  <resources/>
  <connections/>
 </ui>

@@ -518,12 +518,12 @@ void MainWindow::on_actionAdicionar_2_triggered()
 
 void MainWindow::on_actionRemover_2_triggered()
 {
-    // usersHandler->showRemoveUserDialog();
+    usersHandler->showRemoveUserDialog();
 }
 
 void MainWindow::on_actionAtualizar_2_triggered()
 {
-    // usersHandler->showUpdateUserDialog();
+    usersHandler->showUpdateUserDialog();
 }
 
 
