@@ -36,9 +36,11 @@ MainWindow::MainWindow(QWidget *parent)
     logHandler = new LogHandler(ui->general_log_screen, this);
     logServoWindow = new LogServoWindow(ui->servo_log_screen, ui->filter_servo_log,
                                         ui->clean_log_button, this);
+    //  ServoMinas deploy
+    myServoThread = new QThread(this); // inicializa uma thread
     myServo = new ServoMinas("enp2s0"); // enp2s0 para linux. eth0 para windows
-
-// seção das conexões
+    myServo->moveToThread(myServoThread);
+    // seção das conexões
     // Selecionar sensor
     connect(ui->sensorSelected, &QPushButton::clicked, this, &MainWindow::by_sensorSelected_action);
     // Animar Dial com simulação de operação
@@ -90,7 +92,7 @@ MainWindow::MainWindow(QWidget *parent)
 
     // Cconectar as operações de log do servo com a tela de log
     connect(myServo, &ServoMinas::logMessage, logServoWindow, &LogServoWindow::appendLog);
-    connect(myServo, &ServoMinas::state, this, &MainWindow::servoState);
+    connect(myServo, &ServoMinas::initializationFinished, this, &MainWindow::servoState);
 
     // conexões do timer de ligar e desligar o servo:
     connect(ui->init_servo_button, &QPushButton::clicked, this, &MainWindow::initializeServo);
@@ -101,13 +103,29 @@ MainWindow::MainWindow(QWidget *parent)
     connect(ui->homing_button, &QPushButton::clicked, this, &MainWindow::startHoming);
     connect(ui->clear_errors, &QPushButton::clicked, this, &MainWindow::clearServoErrors);
 
+    // connects que viabilizam o envio dos sinais gerados pelas funções acima
+    connect (this, &MainWindow::initSignal,myServo,&ServoMinas::initialize);
+    connect (this, &MainWindow::stopOperationSignal,myServo,&ServoMinas::disableServo);
+    connect (this, &MainWindow::moveServoToPositionSignal,myServo,&ServoMinas::moveAbsoluteTo);
+    connect (this, &MainWindow::moveServoToAngularPositionSignal,myServo,&ServoMinas::moveAngularTo);
+    connect (this, &MainWindow::startHomingSignal,myServo,&ServoMinas::moveToHome);
+    connect (this, &MainWindow::resetErrorsSignal,myServo,&ServoMinas::resetErrors);
+
+
     //  Atualização dos dados da tela em função da modificação do input or output do servo vindo do PDO
     connect(myServo, &ServoMinas::dataChanged,this, &MainWindow::updateActualServoData);
+
+    myServoThread->start(); // Inicializar thread do servo
 
 }
 
 MainWindow::~MainWindow()
 {
+    if (myServoThread) { // caso a thread exista ao fechar a mainwindow
+        myServoThread->quit(); // Solicita que a thread pare
+        myServoThread->wait(); // Aguarda a finalização da thread
+        delete myServoThread;  // Libera a memória da thread
+    }
     delete ui;
 }
 
@@ -419,7 +437,7 @@ void MainWindow::on_actionVer_Sensores_triggered()
 
 void MainWindow::updateSensorDependencies(SensorData *_sensorData) {
 
-// Atualizar dados do sensor mostrado
+    // Atualizar dados do sensor mostrado
     setSensorData(*_sensorData);
     ui->sensorSelected->setText(this->sensorData.model_name);
     ui->label_angle_start->setText(QString::number(this->sensorData.start_angle));
@@ -428,7 +446,7 @@ void MainWindow::updateSensorDependencies(SensorData *_sensorData) {
     myDial->setValue(this->sensorData.start_angle);
     myAnimate_progress_bar->setMinimum(this->sensorData.start_angle);
     myAnimate_progress_bar->setMaximum(this->sensorData.arrive_angle);
-// Atualizar os dados do dial
+    // Atualizar os dados do dial
 
 
 
@@ -594,32 +612,40 @@ void MainWindow::servoCommunicationBox_stateChanged(bool toogled)
         ui->enable_servo_communication->blockSignals(true);
         ui->enable_servo_communication->setChecked(false);
         ui->enable_servo_communication->blockSignals(false);
+        ui->animate_dial_button->setEnabled(toogled);
     }
 }
 
 void MainWindow::initializeServo()
 {
-    if(myServo->initialize()) // Inicializar o servo
-    {
-        qDebug()<< "Servo Habilitado";
-        ui->init_servo_button->setEnabled(false);
-        ui->disable_servo_button->setEnabled(true);
-        ui->disable_servo_button_2->setEnabled(true);
-    }
+
+    emit initSignal();
+
+    connect (myServo, &ServoMinas::initializationFinished,this,[this](bool situation){
+        if(situation){
+            qDebug()<< "Servo Habilitado";
+            ui->init_servo_button->setEnabled(false);
+            ui->disable_servo_button->setEnabled(true);
+            ui->disable_servo_button_2->setEnabled(true);
+        }
+        else
+            qDebug()<< "Servo não habilitado";
+    });
+
 
 }
 
 void MainWindow::stopOperation()
 {
 
-    myServo->disableServo(); // Desabilitar o servo
+    emit stopOperationSignal(); // Desabilitar o servo
     qDebug()<< "Operação parada";
 }
 
 void MainWindow::startHoming()
 {
+    emit startHomingSignal();// inicializar homing
     qDebug() << "inicializar o homing";
-    myServo->moveToHome();
 }
 
 void MainWindow::insertedAngleToAchieve(){
@@ -632,7 +658,7 @@ void MainWindow::insertedAngleToAchieve(){
         velocity = ui->servo_velocity_setup->text().toDouble();
     }
     if(ok && insertedValue <= sensorData.arrive_angle && insertedValue>=sensorData.start_angle){
-        myServo->moveAbsoluteTo(insertedValue,velocity  );
+        myServo->moveAbsoluteTo(insertedValue,velocity);
         myDial->setValue(insertedValue);
     }
     else{
@@ -643,8 +669,7 @@ void MainWindow::insertedAngleToAchieve(){
 
 void MainWindow::clearServoErrors()
 {
-
-    myServo->resetErrors();
+    emit resetErrorsSignal();
 }
 
 void MainWindow::setServoAngularPosition(double angle, double velocity){
@@ -664,11 +689,19 @@ void MainWindow::setSensorData(SensorData _data)
 }
 
 
-void MainWindow::updateActualServoData(){
-    qDebug() << "foi alterado";
-    uint32 actualServoPosition = myServo->input.position_actual_value;
 
-    ui->servo_hex_position->setText( QString::number(actualServoPosition));
+void MainWindow::updateActualServoData(){
+    actual_servo_value = static_cast<int32_t>(myServo->input.position_actual_value);
+    actual_servo_angle = static_cast<double>(actual_servo_value);
+    qDebug() << "value: " << actual_servo_value  << "Angle" <<actual_servo_angle;
+    // myDial->setValue(actual_servo_angle);
+    if(actual_servo_value & 80000000)
+    {
+        ui->servo_hex_position->setText("-" + QString::number(actual_servo_value-80000000,16).toUpper()+"h");
+    }
+    else{
+        ui->servo_hex_position->setText( QString::number(actual_servo_value,16).toUpper()+"h");
+    }
 }
 
 QString MainWindow::getModelName()

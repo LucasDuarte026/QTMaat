@@ -7,6 +7,7 @@
 #include <QProgressBar>
 #include <QTimer>
 #include <QDoubleSpinBox>
+#include <QThread>
 #include "sensorselectionwindow.h"
 #include "addsensordialog.h"
 #include "removesensordialog.h"
@@ -41,6 +42,15 @@ public:
 signals:
     // Sinal enviado pela main window para avisar que a comunicação com o servo foi iniciada
     void servoCheckBoxChanged(bool checked);    // Enviar o sinal geral que a caixa de habilitação de comunicação com o servo foi mudada de estado
+
+
+    // sinais para controle da thread servo
+    void initSignal();
+    void stopOperationSignal();
+    void moveServoToPositionSignal(double position, double velocity);
+    void moveServoToAngularPositionSignal(double angle,double velocity);
+    void startHomingSignal();
+    void resetErrorsSignal();
 
 private slots:
     //Atualizar as dependências na mainWindow em função do sensor selecionado
@@ -114,10 +124,11 @@ private:
     //  Classe dos logins e CRUD de usuários
     UsersHandler *usersHandler;
 
-    ServoMinas *myServo;
-
+    QThread *myServoThread; //  Thread para deploy da classe myServo
+    ServoMinas *myServo;    //  Classe ServoMinas para executar as operações e comunicações com o servo
     UserType myUser;  // Guarda o nome do usuário e sua permissão de acesso na página
-    double actual_servo_value; // variável que guarda a posição atual do servo em hexa
+    uint32 actual_servo_value;  // variável que guarda a posição atual do servo em hexa
+    double actual_servo_angle;    // variável que guarda o ângulo atual do servo em graus
     bool servoUP;       // variável para ver se o servo está habilitado
 
     void configDial(QDial *_myDial);

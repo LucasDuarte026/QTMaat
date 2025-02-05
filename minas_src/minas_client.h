@@ -46,7 +46,7 @@ namespace minas_control
         // input
         uint16 error_code;                 // 603Fh : Error code
         uint16 statusword;                 // 6041h : Statusword
-        uint8 operation_mode;              // 6061h : Modes of operation display
+        uint8  operation_mode;             // 6061h : Modes of operation display
         uint32 position_actual_value;      // 6064h : Position actual value
         uint32 velocity_actual_value;      // 606Ch : Velocity actual value
         uint16 torque_actual_value;        // 6077h : Torque actual value

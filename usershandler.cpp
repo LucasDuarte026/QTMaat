@@ -21,8 +21,8 @@
 
 UsersHandler::UsersHandler(QObject *parent)
     : QObject(parent)
-    , user_type("prod")
-    , username("comum")
+    , user_type("Produção")
+    , username("Usuário comum")
     , password("----")
 {
 }
