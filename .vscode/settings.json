@@ -1,0 +1,6 @@
+{
+    "files.associations": {
+        "iomanip": "cpp",
+        "system_error": "cpp"
+    }
+}

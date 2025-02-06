@@ -113,7 +113,7 @@ MainWindow::MainWindow(QWidget *parent)
 
 
     //  Atualização dos dados da tela em função da modificação do input or output do servo vindo do PDO
-    connect(myServo, &ServoMinas::dataChanged,this, &MainWindow::updateActualServoData);
+    connect(myServo, &ServoMinas::inputChangedSignal,this, &MainWindow::updateActualServoData);
 
     myServoThread->start(); // Inicializar thread do servo
 
@@ -586,16 +586,11 @@ void MainWindow::on_actionAtualizar_2_triggered()
 
 void MainWindow::servoState(bool servoSituation)
 {
-
     servoUP=servoSituation;
-    if(servoUP){
+    if(servoUP)
         qDebug() << " -> Servo conectado e pronto para inicializar operações\n";
-
-    }
     else
-    {
         qDebug() << " -> Servo não está conectado\n";
-    }
 }
 
 void MainWindow::servoCommunicationBox_stateChanged(bool toogled)
@@ -658,7 +653,8 @@ void MainWindow::insertedAngleToAchieve(){
         velocity = ui->servo_velocity_setup->text().toDouble();
     }
     if(ok && insertedValue <= sensorData.arrive_angle && insertedValue>=sensorData.start_angle){
-        myServo->moveAbsoluteTo(insertedValue,velocity);
+        // myServo->moveAbsoluteTo(insertedValue,velocity);
+        emit moveServoToPositionSignal(insertedValue,velocity);
         myDial->setValue(insertedValue);
     }
     else{
@@ -690,8 +686,8 @@ void MainWindow::setSensorData(SensorData _data)
 
 
 
-void MainWindow::updateActualServoData(){
-    actual_servo_value = static_cast<int32_t>(myServo->input.position_actual_value);
+void MainWindow::updateActualServoData(minas_control::MinasInput input){
+    actual_servo_value = static_cast<int32_t>(input.position_actual_value);
     actual_servo_angle = static_cast<double>(actual_servo_value);
     qDebug() << "value: " << actual_servo_value  << "Angle" <<actual_servo_angle;
     // myDial->setValue(actual_servo_angle);

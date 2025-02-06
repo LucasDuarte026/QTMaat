@@ -94,8 +94,9 @@ private slots:
     //  Atualizar as telas de log
     void updateGeneralLogContent();
     void updateServoLogContent();
-    //  Atualizar
-    void updateActualServoData();
+
+    //  Atualizar os dados na main page em função do estado atual do servo
+    void updateActualServoData(minas_control::MinasInput input);
 
     //  Setter de dados do tipo SensorData
     void setSensorData(SensorData _data);
