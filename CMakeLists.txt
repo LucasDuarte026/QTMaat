@@ -52,8 +52,7 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
         updatesensordialog.h updatesensordialog.cpp
 
         usershandler.h usershandler.cpp
-
-
+        worker.h worker.cpp
 
 
     )

@@ -4,11 +4,14 @@
 #include <QObject>
 #include <QTimer>
 #include <QDateTime>
+#include <QThread>
 #include <QElapsedTimer>
 #include <QCoreApplication>
 #include <QException>
 #include "ethercat_manager.h"
 #include "minas_client.h"
+#include "worker.h"
+
 
 class ServoMinas : public QObject
 {
@@ -27,8 +30,7 @@ public:
     void moveToHome(); // Move to home position
     void setActualPosition(uint32_t value);
     uint32_t getActualPosition();
-    minas_control::MinasOutput output;
-    minas_control::MinasInput input;
+
 
 public slots:
     void updateCommunicationState(bool checked);
@@ -36,11 +38,19 @@ public slots:
 
 signals:
     void logMessage(QString message); // enviar os logs para o logwindow
-    void dataChanged();
+    void inputChangedSignal(minas_control::MinasInput input);
+    // void outputChangedSignal(minas_control::MinasInput output); // não será usado
 
     //  Sinais de controle
     void initializationFinished(bool situation);
 private:
+    void threadMoveToHome();
+    void threadMoveAbsoluteTo(double position, double velocity );
+    void newLogReceived(QString message);
+
+    QThread *workerThread;
+    Worker *worker;
+
     QString interfaceName;
     ethercat::EtherCatManager *manager; //  cliente que gerencia a comunicação em baixo nível EtherCAT
     minas_control::MinasClient *client; //  client qque gerencia a comunicação em auto nivel com o drive
@@ -49,7 +59,6 @@ private:
     double period;      //  periodo de comunicação com o equipamento
     int iterationCount;
 
-    bool inOperation;
     uint32_t actual_position;
     bool isCommunicationEnabled;
     void configureSafetyLimits(); // Configura os limites de segurança do servo
