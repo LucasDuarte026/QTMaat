@@ -129,6 +129,133 @@ void Worker::moveToHome() {
 }
 */
 
+
+
+void Worker::threadMoveAbsoluteTo(double position, double velocity) {
+    // QTimer timerLimit;
+    // timerLimit.start(50);
+    QString message;
+    if(!client )
+    {
+        if(!client)
+        {
+            message = "Cliente não inicializado. Não é possível mover para o home.";
+        }
+        emit sendLog(message);
+        return;
+    }
+
+    // Bloqueia o mutex para acesso seguro ao client
+    // QMutexLocker locker(mutex);
+    minas_control::MinasOutput output;
+    minas_control::MinasInput input;
+
+    if (client) {
+        ThreadEnableServo(0x01);
+        minas_control::MinasOutput output;
+        minas_control::MinasInput input;
+        memset(&output, 0x00, sizeof(minas_control::MinasOutput));
+        output.target_position = static_cast<int32_t>(0x800000 * position);
+        output.max_motor_speed = static_cast<int32_t>(velocity);
+        output.target_torque = 500;
+        output.max_torque = 500;
+        output.controlword = 0x001F;
+        output.operation_mode = 0x01;
+
+        client->writeOutputs(output);
+
+        while (!(input.statusword & 0x1000))
+        { // bit12 (set-point-acknowledge)
+            input = client->readInputs();
+        }
+
+        output.controlword &= ~0x0010; // clear new-set-point (bit4)
+        client->writeOutputs(output);
+
+        message = QString("🔄 Movendo servo para posição %1 | %2h | com velocidade %3").arg(position).arg(output.target_position).arg(velocity);
+    } else {
+        message =  "Cliente não inicializado. Não é possível mover para a posição absoluta.";
+        emit sendLog(message);
+        return;
+    }
+    emit sendLog(message);
+
+    int iterationCount = 0;
+
+    while(true) //  debug da operação
+    {
+        if(iterationCount>=20000)
+            break;
+        input = threadReadInput();
+        output = threadReadOutput();
+        if(iterationCount % 10 ==0){
+            std::ostringstream logStream;
+            logStream << "err = " << std::hex << std::setw(8) << std::setfill('0') << input.error_code
+                      << ", ctrl = " << std::hex << std::setw(8) << std::setfill('0') << output.controlword
+                      << ", status = " << std::hex << std::setw(8) << std::setfill('0') << input.statusword
+                      << ", op_mode = " << std::hex << std::setw(8) << std::setfill('0') << input.operation_mode
+                      << ", pos = " << std::hex << std::setw(8) << std::setfill('0') << input.position_actual_value
+                      << ", vel = " << std::hex << std::setw(8) << std::setfill('0') << input.velocity_actual_value
+                      << ", tor = " << std::hex << std::setw(8) << std::setfill('0') << input.torque_actual_value
+                      << " -> interação: "<< iterationCount;
+            // emit sendLog(QString::fromStdString(logStream.str()));
+        }
+
+        if (input.statusword & 0x0400) { // Target reached
+            emit sendLog("✅ Target reached!");
+
+            this->threadDisableServo();
+            break;
+        }
+
+        // Move to next tick
+        tick.tv_nsec += period;
+        while (tick.tv_nsec >= NSEC_PER_SECOND)
+        {
+            tick.tv_nsec -= NSEC_PER_SECOND;
+            tick.tv_sec++;
+        }
+
+        // detectar overrun de tempo
+        struct timespec before;
+        clock_gettime(CLOCK_REALTIME, &before);
+        double overrun_time = (before.tv_sec + double(before.tv_nsec) / 1e9) -
+                              (tick.tv_sec + double(tick.tv_nsec) / 1e9);
+
+        if (overrun_time > 0.0) {
+            // emit logMessage(QString("⚠️ Overrun detected: %1 ms").arg(overrun_time * 1000));
+        }
+        clock_nanosleep(CLOCK_REALTIME, TIMER_ABSTIME, &tick, NULL); // esperar o prox tic
+
+        iterationCount++;
+    }
+    threadDisableServo();
+    emit sendLog(QString("✅ Sucesso na operação para a posição %1 | %2h | com velocidade %3").arg(position).arg(static_cast<qulonglong>(output.target_position)).arg(velocity));
+    emit finished();
+}
+
+void Worker::threadMoveToHome(){
+
+}
+
+
+//funções privadas
+void Worker::threadDisableServo() {
+    QString message;
+    if (client) {
+        minas_control::MinasInput input;
+        input = threadReadInput();
+        client->printPDSStatus(input);
+        client->printPDSOperation(input);
+        client->servoOff();
+        message =  "Servo desabilitado.";
+    } else {
+        message =  "Cliente não inicializado. Não é possível desabilitar o servo.";
+    }
+    emit sendLog(message);
+
+}
+
 void Worker::ThreadEnableServo(int mode) {
     QString message;
     if (client) {
@@ -176,125 +303,4 @@ minas_control::MinasOutput Worker::threadReadOutput(){
     output = client->readOutputs();
     // emit outputChangedSignal(output); // não usado por enquanto
     return  output;
-}
-
-void Worker::threadDisableServo() {
-    QString message;
-    if (client) {
-        minas_control::MinasInput input;
-        input = threadReadInput();
-        client->printPDSStatus(input);
-        client->printPDSOperation(input);
-        client->servoOff();
-        message =  "Servo desabilitado.";
-    } else {
-        message =  "Cliente não inicializado. Não é possível desabilitar o servo.";
-    }
-    emit sendLog(message);
-
-}
-
-void Worker::threadMoveAbsoluteTo(double position, double velocity) {
-    QString message;
-    if(!client )
-    {
-        if(!client)
-        {
-            message = "Cliente não inicializado. Não é possível mover para o home.";
-        }
-        emit sendLog(message);
-        return;
-    }
-
-    // Bloqueia o mutex para acesso seguro ao client
-    // QMutexLocker locker(mutex);
-    minas_control::MinasOutput output;
-    minas_control::MinasInput input;
-
-    if (client) {
-        ThreadEnableServo(0x01);
-        minas_control::MinasOutput output;
-        minas_control::MinasInput input;
-        memset(&output, 0x00, sizeof(minas_control::MinasOutput));
-        output.target_position = static_cast<int32_t>(0x800000 * position);
-        output.max_motor_speed = static_cast<int32_t>(velocity);
-        output.target_torque = 500;
-        output.max_torque = 500;
-        output.controlword = 0x001F;
-        output.operation_mode = 0x01;
-
-        client->writeOutputs(output);
-
-        while (!(input.statusword & 0x1000))
-        { // bit12 (set-point-acknowledge)
-            input = client->readInputs();
-        }
-
-        output.controlword &= ~0x0010; // clear new-set-point (bit4)
-        client->writeOutputs(output);
-
-        message = QString("🔄 Movendo servo para posição %1 |%2| com velocidade %3").arg(position).arg(output.target_position).arg(velocity);
-    } else {
-        message =  "Cliente não inicializado. Não é possível mover para a posição absoluta.";
-        emit sendLog(message);
-        return;
-    }
-    emit sendLog(message);
-
-    int iterationCount = 0;
-
-    while(true) //  debug da operação
-    {
-        if(iterationCount>=20000)
-            break;
-        input = threadReadInput();
-        output = threadReadOutput();
-        if(iterationCount % 10 ==0){
-            std::ostringstream logStream;
-            logStream << "err = " << std::hex << std::setw(8) << std::setfill('0') << input.error_code
-                      << ", ctrl = " << std::hex << std::setw(8) << std::setfill('0') << output.controlword
-                      << ", status = " << std::hex << std::setw(8) << std::setfill('0') << input.statusword
-                      << ", op_mode = " << std::hex << std::setw(8) << std::setfill('0') << input.operation_mode
-                      << ", pos = " << std::hex << std::setw(8) << std::setfill('0') << input.position_actual_value
-                      << ", vel = " << std::hex << std::setw(8) << std::setfill('0') << input.velocity_actual_value
-                      << ", tor = " << std::hex << std::setw(8) << std::setfill('0') << input.torque_actual_value
-                      << " -> interação: "<< iterationCount;
-            emit sendLog(QString::fromStdString(logStream.str()));
-        }
-
-        if (input.statusword & 0x0400) { // Target reached
-            emit sendLog("✅ Target reached!");
-
-            this->threadDisableServo();
-            break;
-        }
-
-        // Move to next tick
-        tick.tv_nsec += period;
-        while (tick.tv_nsec >= NSEC_PER_SECOND)
-        {
-            tick.tv_nsec -= NSEC_PER_SECOND;
-            tick.tv_sec++;
-        }
-
-        // detectar overrun de tempo
-        struct timespec before;
-        clock_gettime(CLOCK_REALTIME, &before);
-        double overrun_time = (before.tv_sec + double(before.tv_nsec) / 1e9) -
-                              (tick.tv_sec + double(tick.tv_nsec) / 1e9);
-
-        if (overrun_time > 0.0) {
-            // emit logMessage(QString("⚠️ Overrun detected: %1 ms").arg(overrun_time * 1000));
-        }
-        clock_nanosleep(CLOCK_REALTIME, TIMER_ABSTIME, &tick, NULL); // esperar o prox tic
-
-        iterationCount++;
-    }
-
-    emit sendLog(QString("✅ Sucesso na operação para a posição %1 |%2| com velocidade %3").arg(position).arg(static_cast<qulonglong>(output.target_position)).arg(velocity));
-
-}
-
-void Worker::threadMoveToHome(){
-
 }

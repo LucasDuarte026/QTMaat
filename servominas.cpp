@@ -21,6 +21,8 @@ ServoMinas::ServoMinas(QString interface)
     period = 4e+6; // 4ms period in nanoseconds
     clock_gettime(CLOCK_REALTIME, &tick);
 
+
+
 }
 
 ServoMinas::~ServoMinas() {
@@ -36,6 +38,7 @@ ServoMinas::~ServoMinas() {
 void ServoMinas::newLogReceived(QString message){
     emit logMessage("-> Worker:" +message);
 }
+
 bool ServoMinas::initialize() {
     QString message;
     try {
@@ -194,18 +197,22 @@ void ServoMinas::moveToHome() {
 }
 
 void ServoMinas::moveAbsoluteTo(double position, double velocity ) {
+    std::cout <<"chegou aqui 1\n";
     if (!client) {
-        // QMessageBox::critical(nullptr, "Erro", "Cliente não inicializado. Não foi possível iniciar o movimento absoluto");
+        emit logMessage("Operação abortada: Cliente não habilitado");
         return;
     }
     if (!isCommunicationEnabled) {
-        // QMessageBox::critical(nullptr, "Erro", "Comunicação não habilitada. Não foi possível iniciar o movimento absoluto");
+        emit logMessage("Operação abortada: Comunicação não habilitada");
         return;
     }
-    if (workerThread && workerThread->isRunning()) {
+    if (workerThread) {
         qWarning() << "Já existe uma operação em andamento.";
         return;
     }
+
+    std::cout <<"chegou aqui 2\n";
+
     workerThread = new QThread();
     worker = new Worker(client);
 
@@ -214,11 +221,27 @@ void ServoMinas::moveAbsoluteTo(double position, double velocity ) {
     connect(workerThread, &QThread::started, worker, [this,position,velocity](){
         worker->threadMoveAbsoluteTo(position,velocity);
     });
-    connect(worker, &Worker::finished, workerThread, &QThread::quit);
-    connect(worker, &Worker::finished, worker, &Worker::deleteLater);
-    connect(workerThread, &QThread::finished, workerThread, &QThread::deleteLater);
+    // connect(worker, &Worker::finished, workerThread, &QThread::quit);
+    // connect(worker, &Worker::finished, worker, &Worker::deleteLater);
+    // connect(workerThread, &QThread::finished, workerThread, &QThread::deleteLater);
+    connect(worker, &Worker::finished, workerThread, [&](){
+        std::cout << "Thread quit signal received.";
+        workerThread->quit();
+    });
+    connect(worker, &Worker::finished, worker, [&](){
+        std::cout << "Worker deleteLater called.";
+        worker->deleteLater();
+    });
+    connect(workerThread, &QThread::finished, workerThread, [&](){
+        std::cout << "Thread finished signal received.";
+        workerThread->deleteLater();
+        worker = nullptr;
+        workerThread = nullptr;
+    });
     connect(worker, &Worker::sendLog,this, &ServoMinas::newLogReceived);
-
+    connect(worker, &Worker::inputChangedSignalThread, this, [this](minas_control::MinasInput input){
+        emit inputChangedSignal(input);
+    });
     workerThread->start();
 
 }
@@ -248,7 +271,7 @@ minas_control::MinasInput ServoMinas::readInput(){
     minas_control::MinasInput input;
 
     if(client)
-{
+    {
         input = client->readInputs();
         emit inputChangedSignal(input);
         return  input;

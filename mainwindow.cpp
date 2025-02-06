@@ -689,7 +689,7 @@ void MainWindow::setSensorData(SensorData _data)
 void MainWindow::updateActualServoData(minas_control::MinasInput input){
     actual_servo_value = static_cast<int32_t>(input.position_actual_value);
     actual_servo_angle = static_cast<double>(actual_servo_value);
-    qDebug() << "value: " << actual_servo_value  << "Angle" <<actual_servo_angle;
+    // qDebug() << "value: " << actual_servo_value  << "Angle" <<actual_servo_angle;
     // myDial->setValue(actual_servo_angle);
     if(actual_servo_value & 80000000)
     {

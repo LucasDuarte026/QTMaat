@@ -3,6 +3,7 @@
 
 #include <QObject>
 #include <QMutex>
+#include <QTimer>
 #include "ethercat_manager.h"
 #include "minas_client.h"
 
