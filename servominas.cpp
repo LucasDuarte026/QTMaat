@@ -195,11 +195,11 @@ void ServoMinas::moveToHome() {
 
 void ServoMinas::moveAbsoluteTo(double position, double velocity ) {
     if (!client) {
-        QMessageBox::critical(nullptr, "Erro", "Cliente não inicializado. Não foi possível iniciar o movimento absoluto");
+        // QMessageBox::critical(nullptr, "Erro", "Cliente não inicializado. Não foi possível iniciar o movimento absoluto");
         return;
     }
     if (!isCommunicationEnabled) {
-        QMessageBox::critical(nullptr, "Erro", "Comunicação não habilitada. Não foi possível iniciar o movimento absoluto");
+        // QMessageBox::critical(nullptr, "Erro", "Comunicação não habilitada. Não foi possível iniciar o movimento absoluto");
         return;
     }
     if (workerThread && workerThread->isRunning()) {
