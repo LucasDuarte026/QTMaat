@@ -268,6 +268,12 @@ void ServoMinas::moveToHome() {
 
 void ServoMinas::moveAbsoluteTo(double position, double velocity ) {
     QString message;
+    if(!client){
+        emit logMessage("Cliente não inicializado. Abortando operação");
+    }
+    if(!isCommunicationEnabled){
+        emit logMessage("Comunicaçõa não habilitaad. Abortando operação");
+    }
     if (client && isCommunicationEnabled) {
         enableServo(0x01);
 
