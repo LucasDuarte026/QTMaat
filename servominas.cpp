@@ -22,7 +22,6 @@ ServoMinas::ServoMinas(QString interface)
     clock_gettime(CLOCK_REALTIME, &tick);
 
 
-
 }
 
 ServoMinas::~ServoMinas() {
@@ -163,77 +162,79 @@ void ServoMinas::configureSafetyLimits() {
 }
 
 void ServoMinas::moveToHome() {
-    // if (!client) {
-    //     qCritical() << "Cliente não inicializado. Não foi possível iniciar o movimento absoluto";
-    //     QMessageBox::critical(nullptr, "Erro", "Cliente não inicializado. Não foi possível iniciar o movimento absoluto");
-    //     return;
-    // }
-    // if (!isCommunicationEnabled) {
-    //     qCritical() << "Cliente não inicializado. Não foi possível iniciar o movimento absoluto";
-    //     QMessageBox::critical(nullptr, "Erro", "Comunicação não habilitada. Não foi possível iniciar o movimento absoluto");
-    //     return;
-    // }
-    // if (workerThread && workerThread->isRunning()) {
-    //     qWarning() << "Já existe uma operação em andamento.";
-    //     QMessageBox::warning(nullptr, "Warning", "Já existe uma operação em andamento.");
 
+    if (!client) {
+        emit logMessage("Operação Homing abortada: Cliente não habilitado");
+        return;
+    }
+    if (!isCommunicationEnabled) {
+        emit logMessage("Operação Homing abortada: Comunicação não habilitada");
+        return;
+    }
+    // if (workerThread) {
+    //     emit logMessage("Já existe uma operação em andamento.");
     //     return;
     // }
-    qDebug() << "passou aqui";
-    workerThread = new QThread(this);
-    worker = new Worker(client);
+    workerThread = new QThread();
+    if(client)
+        worker = new Worker(client);
 
     worker->moveToThread(workerThread);
-
+    /*  conexões de controle da worker:
+        - O que ela inicia
+        - a espera de terminar e se auto deletar
+        - responsividade pelos sinais
+    */
     connect(workerThread, &QThread::started, worker, &Worker::threadMoveToHome);
     connect(worker, &Worker::finished, workerThread, &QThread::quit);
     connect(worker, &Worker::finished, worker, &Worker::deleteLater);
-    connect(workerThread, &QThread::finished, workerThread, &QThread::deleteLater);
+    connect(workerThread, &QThread::finished, workerThread, [&](){
+        workerThread->deleteLater();
+        worker = nullptr;
+        workerThread = nullptr;
+    });
+
+    // log e envio do dado lido
+    connect(worker, &Worker::sendLog,this, &ServoMinas::newLogReceived);
+    connect(worker, &Worker::inputChangedSignalThread, this, [this](minas_control::MinasInput input){
+        emit inputChangedSignal(input);
+    });
+    // envia para mainwindow que a thread saiu e a execução terminou
+    connect(worker, &Worker::finished,this, [this](){
+        emit operationStatusSignal(false);
+    });
 
     workerThread->start();
-
-    // emit logMessage(" -> Homing realizado com sucesso");
+    emit operationStatusSignal(true); // iniciou a operação
 
 }
 
 void ServoMinas::moveAbsoluteTo(double position, double velocity ) {
-    std::cout <<"chegou aqui 1\n";
+
     if (!client) {
-        emit logMessage("Operação abortada: Cliente não habilitado");
+        emit logMessage("Operação de giro abortada: Cliente não habilitado");
         return;
     }
     if (!isCommunicationEnabled) {
-        emit logMessage("Operação abortada: Comunicação não habilitada");
+        emit logMessage("Operação de giro abortada: Comunicação não habilitada");
         return;
     }
-    if (workerThread) {
-        qWarning() << "Já existe uma operação em andamento.";
-        return;
-    }
-
-    std::cout <<"chegou aqui 2\n";
-
+    // if (workerThread) {
+    //     emit logMessage("Já existe uma operação em andamento.");
+    //     return;
+    // }
     workerThread = new QThread();
-    worker = new Worker(client);
+    if(client)
+        worker = new Worker(client);
 
     worker->moveToThread(workerThread);
 
     connect(workerThread, &QThread::started, worker, [this,position,velocity](){
         worker->threadMoveAbsoluteTo(position,velocity);
     });
-    // connect(worker, &Worker::finished, workerThread, &QThread::quit);
-    // connect(worker, &Worker::finished, worker, &Worker::deleteLater);
-    // connect(workerThread, &QThread::finished, workerThread, &QThread::deleteLater);
-    connect(worker, &Worker::finished, workerThread, [&](){
-        std::cout << "Thread quit signal received.";
-        workerThread->quit();
-    });
-    connect(worker, &Worker::finished, worker, [&](){
-        std::cout << "Worker deleteLater called.";
-        worker->deleteLater();
-    });
+    connect(worker, &Worker::finished, workerThread, &QThread::quit);
+    connect(worker, &Worker::finished, worker, &Worker::deleteLater);
     connect(workerThread, &QThread::finished, workerThread, [&](){
-        std::cout << "Thread finished signal received.";
         workerThread->deleteLater();
         worker = nullptr;
         workerThread = nullptr;
@@ -242,10 +243,57 @@ void ServoMinas::moveAbsoluteTo(double position, double velocity ) {
     connect(worker, &Worker::inputChangedSignalThread, this, [this](minas_control::MinasInput input){
         emit inputChangedSignal(input);
     });
-    workerThread->start();
+    // envia para mainwindow que a thread saiu e a execução terminou
+    connect(worker, &Worker::finished,this, [this](){
+        emit operationStatusSignal(false);
+    });
 
+    workerThread->start();
+    emit operationStatusSignal(true); // iniciou a operação
 }
 
+void ServoMinas::moveOffset(double amount, double velocity,double step) {
+
+    if (!client) {
+        emit logMessage("Operação de giro abortada: Cliente não habilitado");
+        return;
+    }
+    if (!isCommunicationEnabled) {
+        emit logMessage("Operação de giro abortada: Comunicação não habilitada");
+        return;
+    }
+    // if (workerThread) {
+    //     emit logMessage("Já existe uma operação em andamento.");
+    //     return;
+    // }
+    workerThread = new QThread();
+    if(client)
+        worker = new Worker(client);
+
+    worker->moveToThread(workerThread);
+
+    connect(workerThread, &QThread::started, worker, [this,amount,velocity,step](){
+        worker->threadMoveOffset(amount,velocity,step);
+    });
+    connect(worker, &Worker::finished, workerThread, &QThread::quit);
+    connect(worker, &Worker::finished, worker, &Worker::deleteLater);
+    connect(workerThread, &QThread::finished, workerThread, [&](){
+        workerThread->deleteLater();
+        worker = nullptr;
+        workerThread = nullptr;
+    });
+    connect(worker, &Worker::sendLog,this, &ServoMinas::newLogReceived);
+    connect(worker, &Worker::inputChangedSignalThread, this, [this](minas_control::MinasInput input){
+        emit inputChangedSignal(input);
+    });
+    // envia para mainwindow que a thread saiu e a execução terminou
+    connect(worker, &Worker::finished,this, [this](){
+        emit operationStatusSignal(false);
+    });
+
+    workerThread->start();
+    emit operationStatusSignal(true); // iniciou a operação
+}
 
 void ServoMinas::moveAngularTo(double angle, double velocity){ // Move para uma posição angular
 

@@ -15,11 +15,12 @@ public:
 
 public slots:
     void threadMoveToHome();
-    void threadMoveAbsoluteTo(double position, double velocity);
+    void threadMoveAbsoluteTo(double amount, double velocity);
+    void threadMoveOffset(double amount,double velocity,double step);
 
 signals:
     void sendLog(QString message);
-    void finished();
+    void finished();// sinal para indicar que a thread parou e terminou sua operação
     void inputChangedSignalThread(minas_control::MinasInput input);
 
 private:
@@ -28,7 +29,7 @@ private:
     minas_control::MinasOutput threadReadOutput();
     minas_control::MinasClient *_client;
     void threadDisableServo();
-    void ThreadEnableServo(int mode);
+    void threadEnableServo(int mode);
     struct timespec tick;// tick de tempo
     int period;
     minas_control::MinasClient *client;

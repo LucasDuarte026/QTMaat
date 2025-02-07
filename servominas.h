@@ -23,6 +23,7 @@ public:
 
     bool initialize(); // Inicializa o cliente EtherCAT
     void moveAbsoluteTo(double position, double velocity = 100); // Move para uma posição absoluta
+    void moveOffset(double offset, double velocity, double step );   //  Move com offset da posição atual
     void moveAngularTo(double angle, double velocity = 100); // Move para uma posição angular
     void enableServo(int mode); // Habilita o servo para operação
     void disableServo(); // Desabilita o servo
@@ -43,6 +44,8 @@ signals:
 
     //  Sinais de controle
     void initializationFinished(bool situation);
+    void operationStatusSignal(bool status); // sinal de que a worker entrou ou saiu em operação, não pode iniciar mais de uma operação ao mesmo tempo
+
 private:
     void threadMoveToHome();
     void threadMoveAbsoluteTo(double position, double velocity );

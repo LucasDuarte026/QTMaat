@@ -24,11 +24,13 @@ MainWindow::MainWindow(QWidget *parent)
     usersHandler = new UsersHandler(this);
 
     myDial = ui->dial_elements->findChild<QDial*>("plan_dial"); // usando o dial criado no UI
-    myInsertDegree = ui->degreeInsertDial;
+    myInsertAbsolute = ui->absoluteRevolution;
     myAnimate_progress_bar = ui->animate_progress_bar;
     myAnimate_progress_bar->setMinimum(this->sensorData.start_angle);
     myAnimate_progress_bar->setMaximum(this->sensorData.arrive_angle);
     myAnimate_progress_bar->setValue(0);
+    ui->enable_servo_communication->setEnabled(false);
+
     if(myDial){
         configDial(myDial);
     }
@@ -48,7 +50,7 @@ MainWindow::MainWindow(QWidget *parent)
 
 
 
-    connect(myInsertDegree, &QLineEdit::returnPressed, this, &MainWindow::insertedAngleToAchieve);
+    connect(myInsertAbsolute, &QLineEdit::returnPressed, this, &MainWindow::insertedAngleToAchieve);
 
     {// botões de limpeza e de filtro da aba de logs gerais
 
@@ -88,7 +90,7 @@ MainWindow::MainWindow(QWidget *parent)
     ui->init_servo_button->setEnabled(true);
     ui->disable_servo_button->setEnabled(false);
     // Connect checkbox toggle to the MainWindow signal
-    connect(ui->enable_servo_communication, &QCheckBox::toggled, this, &MainWindow::servoCommunicationBox_stateChanged);
+    connect(ui->enable_servo_communication, &QPushButton::toggled, this, &MainWindow::servoCommunicationBox_stateChanged);
 
     // Cconectar as operações de log do servo com a tela de log
     connect(myServo, &ServoMinas::logMessage, logServoWindow, &LogServoWindow::appendLog);
@@ -114,6 +116,9 @@ MainWindow::MainWindow(QWidget *parent)
 
     //  Atualização dos dados da tela em função da modificação do input or output do servo vindo do PDO
     connect(myServo, &ServoMinas::inputChangedSignal,this, &MainWindow::updateActualServoData);
+    //  Atualização dos botẽs da tela em função do estado da operação
+    connect(myServo, &ServoMinas::operationStatusSignal,this, &MainWindow::operationOnOFFBehavior);
+
 
     myServoThread->start(); // Inicializar thread do servo
 
@@ -604,9 +609,9 @@ void MainWindow::servoCommunicationBox_stateChanged(bool toogled)
     }
     else{
         QMessageBox::critical(this, "Erro", "Servo não conectado");
-        ui->enable_servo_communication->blockSignals(true);
-        ui->enable_servo_communication->setChecked(false);
-        ui->enable_servo_communication->blockSignals(false);
+        // ui->enable_servo_communication->blockSignals(true);
+        ui->enable_servo_communication->setEnabled(false);
+        // ui->enable_servo_communication->blockSignals(false);
         ui->animate_dial_button->setEnabled(toogled);
     }
 }
@@ -622,6 +627,8 @@ void MainWindow::initializeServo()
             ui->init_servo_button->setEnabled(false);
             ui->disable_servo_button->setEnabled(true);
             ui->disable_servo_button_2->setEnabled(true);
+            ui->enable_servo_communication->setEnabled(true);
+
         }
         else
             qDebug()<< "Servo não habilitado";
@@ -645,14 +652,14 @@ void MainWindow::startHoming()
 
 void MainWindow::insertedAngleToAchieve(){
     bool ok;
-    double insertedValue = myInsertDegree->text().toDouble(&ok);
+    double insertedValue = myInsertAbsolute->text().toDouble(&ok);
     qDebug() << "Valor alterado para:" << insertedValue;
     int velocity = 300; // valor padrão
     if(!ui->servo_velocity_setup->text().isEmpty()) // se ouver algo dentro da celular de velocidade, irá usar o valor de la
     {
         velocity = ui->servo_velocity_setup->text().toDouble();
     }
-    if(ok && insertedValue <= sensorData.arrive_angle && insertedValue>=sensorData.start_angle){
+    if(ok){
         // myServo->moveAbsoluteTo(insertedValue,velocity);
         emit moveServoToPositionSignal(insertedValue,velocity);
         myDial->setValue(insertedValue);
@@ -674,8 +681,6 @@ void MainWindow::setServoAngularPosition(double angle, double velocity){
 }
 
 
-
-
 //  -------------- setters e getters para os dados da main --------------
 
 
@@ -685,19 +690,27 @@ void MainWindow::setSensorData(SensorData _data)
 }
 
 
-
+//update mainwindow com informações vindas do servo
 void MainWindow::updateActualServoData(minas_control::MinasInput input){
-    actual_servo_value = static_cast<int32_t>(input.position_actual_value);
+    actual_servo_value = input.position_actual_value; // valor absoluto unsigned int 32
+    int32_t signed_servovalue = static_cast<int32_t>(actual_servo_value); // valor com sinal de 32 bits mas com sinal (31 bits + negativo)
     actual_servo_angle = static_cast<double>(actual_servo_value);
     // qDebug() << "value: " << actual_servo_value  << "Angle" <<actual_servo_angle;
-    // myDial->setValue(actual_servo_angle);
-    if(actual_servo_value & 80000000)
-    {
-        ui->servo_hex_position->setText("-" + QString::number(actual_servo_value-80000000,16).toUpper()+"h");
-    }
-    else{
-        ui->servo_hex_position->setText( QString::number(actual_servo_value,16).toUpper()+"h");
-    }
+    double mydial_value   =(360*signed_servovalue)/8388608;
+    myDial->setValue(mydial_value);
+    qDebug() << "mydialvalue:" << mydial_value;
+    ui->servo_hex_position->setText( QString::number(signed_servovalue,16).toUpper()+"h");
+
+}
+
+void MainWindow::operationOnOFFBehavior(bool status){
+    // status true: em operação
+    // status false: não está em operação
+
+    ui->homing_button->setEnabled(!status);
+    myInsertAbsolute->setEnabled(!status);
+
+
 }
 
 QString MainWindow::getModelName()

@@ -97,6 +97,8 @@ private slots:
 
     //  Atualizar os dados na main page em função do estado atual do servo
     void updateActualServoData(minas_control::MinasInput input);
+    //  Atualizar a interface a depender do estado de operação do servo
+    void operationOnOFFBehavior(bool status);
 
     //  Setter de dados do tipo SensorData
     void setSensorData(SensorData _data);
@@ -111,7 +113,7 @@ private:
     QDial *myDial;
     QProgressBar *myAnimate_progress_bar;
     QDoubleSpinBox *mySpinBox;
-    QLineEdit *myInsertDegree;
+    QLineEdit *myInsertAbsolute;
     SensorSelectionWindow *sensorWindow;
     SensorData sensorData;
     LogServoWindow *logServoWindow;
