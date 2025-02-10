@@ -48,9 +48,11 @@ signals:
     void initSignal();
     void stopOperationSignal();
     void moveServoToPositionSignal(double position, double velocity);
-    void moveServoToAngularPositionSignal(double angle,double velocity);
     void startHomingSignal();
     void resetErrorsSignal();
+    //jogging signals
+    void jogSignal(double amount, double velocity,double step);
+
     //requisitar leitura da posição atual do encoder
     void readInputNowSignal();
 
@@ -89,6 +91,9 @@ private slots:
     void clearServoErrors();
     void insertedAngleToAchieve();
     void setServoAngularPosition(double angle, double velocity);    //  envia comando para o servo de posicionamento
+    // Controle jogging
+    void on_left_jog_released();
+    void on_right_jog_released();
 
     //  Filtrar as telas de log em função da aba
     void filterGeneralLog(const QString &text);
@@ -106,6 +111,8 @@ private slots:
 
     //  Setter de dados do tipo SensorData
     void setSensorData(SensorData _data);
+
+
 
 
 

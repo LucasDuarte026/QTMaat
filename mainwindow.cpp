@@ -107,10 +107,11 @@ MainWindow::MainWindow(QWidget *parent)
     connect (this, &MainWindow::initSignal,myServo,&ServoMinas::initialize);
     connect (this, &MainWindow::stopOperationSignal,myServo,&ServoMinas::disableServo);
     connect (this, &MainWindow::moveServoToPositionSignal,myServo,&ServoMinas::moveAbsoluteTo);
-    connect (this, &MainWindow::moveServoToAngularPositionSignal,myServo,&ServoMinas::moveAngularTo);
     connect (this, &MainWindow::startHomingSignal,myServo,&ServoMinas::moveToHome);
     connect (this, &MainWindow::resetErrorsSignal,myServo,&ServoMinas::resetErrors);
     connect (this, &MainWindow::readInputNowSignal,myServo,&ServoMinas::readInput);
+    //jogging signals
+    connect (this, &MainWindow::jogSignal,myServo,&ServoMinas::moveOffset);
 
 
     //  Atualização dos dados da tela em função da modificação do input or output do servo vindo do PDO
@@ -505,6 +506,16 @@ void MainWindow::configDial(QDial *_myDial){
     _myDial->setWrapping(true); // Definir comportamento de wrapping
     _myDial->setSingleStep(1);
     _myDial->setValue(this->sensorData.start_angle);
+    _myDial->setStyleSheet(
+        "QDial {"
+        "background-color: gray;"
+        "border: 2px solid gray;"
+        "border-radius: 20px;"
+        "color: blue;"
+        "font: bold 12px;"
+        "subcontrol-origin: red"
+        "}"
+        );
 
 
 }
@@ -565,7 +576,7 @@ void MainWindow::on_actionAtualizar_2_triggered()
 // Funcionalidades relacionada ao micronas
 
 
-
+//  Funções de comunicação ao servo
 void MainWindow::servoState(bool servoSituation)
 {
     servoUP=servoSituation;
@@ -630,7 +641,7 @@ void MainWindow::insertedAngleToAchieve(){
     bool ok;
     double insertedValue = myInsertAbsolute->text().toDouble(&ok);
     qDebug() << "Valor alterado para:" << insertedValue;
-    int velocity = 300; // valor padrão
+    int velocity = 50; // valor padrão
     if(!ui->servo_velocity_setup->text().isEmpty()) // se ouver algo dentro da celular de velocidade, irá usar o valor de la
     {
         velocity = ui->servo_velocity_setup->text().toDouble();
@@ -649,6 +660,51 @@ void MainWindow::clearServoErrors()
 {
     emit resetErrorsSignal();
 }
+
+// Operação Jog - Anti Horário CCW
+void MainWindow::on_left_jog_released()
+{
+    bool ok_amount,ok_step;
+    double amount= ui->amountJog_lineEdit->text().toDouble(&ok_amount);
+    double step = ui->step_lineEdit->text().toDouble(&ok_step);
+    int velocity = 50; // valor padrão
+    if(!ui->servo_velocity_setup->text().isEmpty()) // se ouver algo dentro da celular de velocidade, irá usar o valor de la
+    {
+        velocity = ui->servo_velocity_setup->text().toDouble();
+    }
+    if(ok_amount && ok_step){
+        qDebug() << "Jog de offset CCW em:" << amount*step <<"º";
+        emit jogSignal(amount,velocity,step);
+    }
+    else{
+        QMessageBox::critical(this, "Erro", "Insira o dado flutuante em step e amount");
+        return;
+    }
+
+}
+
+// Operação Jog - Horário CW
+void MainWindow::on_right_jog_released()
+{
+    bool ok_amount,ok_step;
+
+    double amount= ui->amountJog_lineEdit->text().toDouble(&ok_amount);
+    double step = ui->step_lineEdit->text().toDouble(&ok_step);
+    int velocity = 50; // valor padrão
+    if(!ui->servo_velocity_setup->text().isEmpty()) // se ouver algo dentro da celular de velocidade, irá usar o valor de la
+    {
+        velocity = ui->servo_velocity_setup->text().toDouble();
+    }
+    if(ok_amount && ok_step){
+        qDebug() << "Jog de offset CW em:" << amount*step << "º";
+        emit jogSignal(-amount,velocity,step);
+    }
+    else{
+        QMessageBox::critical(this, "Erro", "Insira o dado flutuante em step e amount");
+        return;
+    }
+}
+
 
 void MainWindow::setServoAngularPosition(double angle, double velocity){
 
@@ -685,6 +741,7 @@ void MainWindow::updateActualServoData(minas_control::MinasInput input){
     ui->servo_hex_position->setText( QString::number(signed_angle,16).toUpper()+"h");
     ui->servo_angle_position->setText(QString::number(absolute_angle,'f',4)+"º");
 }
+
 void MainWindow::readInputsUpdate(){
     emit readInputNowSignal();
 }
@@ -696,7 +753,8 @@ void MainWindow::operationOnOFFBehavior(bool status){
 
     ui->homing_button->setEnabled(!status);
     myInsertAbsolute->setEnabled(!status);
-
+    ui->right_jog->setEnabled(!status);
+    ui->left_jog->setEnabled(!status);
 
 }
 
@@ -719,10 +777,5 @@ QString MainWindow::getTurnDirection()
 {
     return this->sensorData.turn_direction ;
 }
-
-
-
-
-
 
 

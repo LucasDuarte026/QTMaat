@@ -294,10 +294,6 @@ void ServoMinas::moveOffset(double amount, double velocity,double step) {
     emit operationStatusSignal(true); // iniciou a operação
 }
 
-void ServoMinas::moveAngularTo(double angle, double velocity){ // Move para uma posição angular
-
-}
-
 void ServoMinas::updateCommunicationState(bool checked) {
     isCommunicationEnabled = checked;
     if (isCommunicationEnabled) {

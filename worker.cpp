@@ -79,9 +79,6 @@ void Worker::threadMoveToHome() {
 
         if (input.statusword & 0x1000) { // Target reached
             emit sendLog("✅ Target reached!");
-
-
-            this->threadDisableServo();
             break;
         }
 
@@ -106,6 +103,7 @@ void Worker::threadMoveToHome() {
 
         iterationCount++;
     }
+    threadDisableServo();
 
     emit sendLog("✅ Sucesso na operação de homing");
     emit finished();
@@ -132,8 +130,6 @@ void Worker::threadMoveAbsoluteTo(double position, double velocity) {
 
     if (client) {
         threadEnableServo(0x01);
-        minas_control::MinasOutput output;
-        minas_control::MinasInput input;
         memset(&output, 0x00, sizeof(minas_control::MinasOutput));
         output.target_position = static_cast<int32_t>((0x800000 * position)/360);
         output.max_motor_speed = static_cast<int32_t>(velocity);
@@ -152,7 +148,7 @@ void Worker::threadMoveAbsoluteTo(double position, double velocity) {
         output.controlword &= ~0x0010; // clear new-set-point (bit4)
         client->writeOutputs(output);
 
-        message = QString("🔄 Movendo servo para posição %1 | %2h | com velocidade %3").arg(position).arg(QString::number(output.target_position, 16).toUpper().rightJustified(8, '0')).arg(velocity);
+        message = QString("🔄 Movendo servo para posição %1º | %2h | com velocidade %3").arg(position).arg(QString::number(output.target_position, 16).toUpper()).arg(velocity);
     } else {
         message =  "Cliente não inicializado. Não é possível mover para a posição absoluta.";
         emit sendLog(message);
@@ -184,7 +180,6 @@ void Worker::threadMoveAbsoluteTo(double position, double velocity) {
         if (input.statusword & 0x0400) { // Target reached
             emit sendLog("✅ Target reached!");
 
-            this->threadDisableServo();
             break;
         }
 
@@ -210,7 +205,7 @@ void Worker::threadMoveAbsoluteTo(double position, double velocity) {
         iterationCount++;
     }
     threadDisableServo();
-    emit sendLog(QString("✅ Sucesso na operação para a posição %1 | %2h | com velocidade %3").arg(position).arg(static_cast<qulonglong>(output.target_position)).arg(velocity));
+    emit sendLog(QString("✅ Sucesso na operação para a posição atual: %1º |  %2h | com velocidade %3").arg(position).arg(input.position_actual_value).arg(velocity));
 
     emit finished();
 }
@@ -221,7 +216,7 @@ void Worker::threadMoveOffset(double amount, double velocity, double step) {
     {
         if(!client)
         {
-            message = "Cliente não inicializado. Não é possível mover para o home.";
+            message = "Cliente não inicializado. Não é possível fazer o jog.";
         }
         emit sendLog(message);
         return;
@@ -230,18 +225,20 @@ void Worker::threadMoveOffset(double amount, double velocity, double step) {
     minas_control::MinasOutput output;
     minas_control::MinasInput input;
 
+    int32_t offset_units = static_cast<int32_t>((amount * step) * (0x800000 / 360.0));
+
     if (client) {
         threadEnableServo(0x01);
-        minas_control::MinasOutput output;
-        minas_control::MinasInput input;
         input = client->readInputs();
         memset(&output, 0x00, sizeof(minas_control::MinasOutput));
-        output.target_position = static_cast<int32_t>(input.position_actual_value) + static_cast<int32_t>(step * amount);
+        output.target_position = static_cast<int32_t>(input.position_actual_value) + offset_units;
         output.max_motor_speed = static_cast<int32_t>(velocity);
         output.target_torque = 500;
         output.max_torque = 500;
         output.controlword = 0x001F;
         output.operation_mode = 0x01;
+
+        std::cout << "-> output.target_position: " << output.target_position << "| input.position_actual_value: " <<input.position_actual_value << "\n";
 
         client->writeOutputs(output);
 
@@ -253,9 +250,9 @@ void Worker::threadMoveOffset(double amount, double velocity, double step) {
         output.controlword &= ~0x0010; // clear new-set-point (bit4)
         client->writeOutputs(output);
 
-        message = QString("🔄 Movendo servo para posição %1 | %2h | com velocidade %3").arg(amount).arg(QString::number(output.target_position, 16).toUpper().rightJustified(8, '0')).arg(velocity);
+        message = QString("🔄 Movendo servo para posição de  %1º | %2h | com velocidade %3").arg(amount*step).arg(QString::number(output.target_position, 16).toUpper()).arg(velocity);
     } else {
-        message =  "Cliente não inicializado. Não é possível mover para a posição absoluta.";
+        message =  "Cliente não inicializado. Não foi possivel executar executar o posicionamento relativo.";
         emit sendLog(message);
         return;
     }
@@ -285,7 +282,6 @@ void Worker::threadMoveOffset(double amount, double velocity, double step) {
         if (input.statusword & 0x0400) { // Target reached
             emit sendLog("✅ Target reached!");
 
-            this->threadDisableServo();
             break;
         }
 
@@ -311,8 +307,7 @@ void Worker::threadMoveOffset(double amount, double velocity, double step) {
         iterationCount++;
     }
     threadDisableServo();
-    emit sendLog(QString("✅ Sucesso na operação para a posição %1 | %2h | com velocidade %3").arg(amount).arg(static_cast<qulonglong>(output.target_position)).arg(velocity));
-
+    emit sendLog(QString("✅ Sucesso na operação para a posição relativa de %1º | para:  %2h | com velocidade %3").arg(amount*step).arg(output.target_position).arg(velocity));
     emit finished();
 }
 
