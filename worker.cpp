@@ -36,7 +36,7 @@ void Worker::threadMoveToHome() {
         client->setCommunicationFuntionExtendedSetup(40);
         client->setHomingReturnSpeedLimit(20000);
         client->setHomingMode(34);  // (On Index Pulse +Ve direction)
-        // client->setTouchProbe(7);
+        client->setTouchProbe(7);
 
         threadEnableServo(0x06);
         memset(&output, 0x00, sizeof(minas_control::MinasOutput));
@@ -108,9 +108,6 @@ void Worker::threadMoveToHome() {
     emit sendLog("✅ Sucesso na operação de homing");
     emit finished();
 }
-
-
-
 
 void Worker::threadMoveAbsoluteTo(double position, double velocity) {
 

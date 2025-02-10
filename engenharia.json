@@ -1,0 +1,30 @@
+{
+  "ServoMinas": {
+    "LimitesDeSeguranca": {
+      "TorqueDeParadaEmergencia": 100,
+      "NivelDeOverload": 70,
+      "NivelDeOverspeed": 600,
+      "LimiteDeTrabalhoDoMotor": 0.1,
+      "PeriodoDeInterpolacaoDeTempo": 4000,
+      "Velocidade": "0x16000000",
+      "Aceleracao": "0x80000000",
+      "Desaceleracao": "0x80000000"
+    },
+    "Homing": {
+      "ProbeFunction": 8000000,
+      "SetSwitchSpeed": 8000000,
+      "HomingAcceleration": 33554432,
+      "HomingTorqueLimit": 500,
+      "HomingDetectionTime": 2048,
+      "HomingDetectionVelocity": 33554432,
+      "CommunicationFunctionExtendedSetup": 40,
+      "HomingReturnSpeedLimit": 20000,
+      "HomingMode": 34,
+      "TouchProbe": 7
+    },
+    "Posicionamento": {
+      "TorqueMaximo": 500,
+      "TargetTorque": 500
+    }
+  }
+}

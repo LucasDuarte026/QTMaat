@@ -34,6 +34,9 @@ MainWindow::MainWindow(QWidget *parent)
         configDial(myDial);
     }
 
+    //  Engenharia tab
+    configTag_engenharia();
+
     logHandler = new LogHandler(ui->general_log_screen, this);
     logServoWindow = new LogServoWindow(ui->servo_log_screen, ui->filter_servo_log,
                                         ui->clean_log_button, this);
@@ -778,4 +781,115 @@ QString MainWindow::getTurnDirection()
     return this->sensorData.turn_direction ;
 }
 
+//função auxiliar para incrementar os itens recursivamente
+void addJsonToTree(const QJsonObject &jsonObj, QStandardItem *parentItem) {
+    for (const QString &key : jsonObj.keys()) {
+        QJsonValue value = jsonObj.value(key);
+        QStandardItem *categoryItem = new QStandardItem(key);
+        categoryItem->setFlags(Qt::ItemIsEnabled);
+        parentItem->appendRow(categoryItem);
 
+        if (value.isObject()) {
+            addJsonToTree(value.toObject(), categoryItem);
+        } else {
+            QStandardItem *valueItem = new QStandardItem(value.toVariant().toString());
+            valueItem->setFlags(Qt::ItemIsEditable); // Permitir edição
+            categoryItem->appendRow(valueItem);
+        }
+    }
+}
+
+void MainWindow::configTag_engenharia() {
+    // JSON com as configurações do ServoMinas
+    QString jsonString = R"(
+    {
+      "ServoMinas": {
+        "LimitesDeSeguranca": {
+          "TorqueDeParadaEmergencia": 100,
+          "NivelDeOverload": 70,
+          "NivelDeOverspeed": 600,
+          "LimiteDeTrabalhoDoMotor": 0.1,
+          "PeriodoDeInterpolacaoDeTempo": 4000,
+          "Velocidade": "0x16000000",
+          "Aceleracao": "0x80000000",
+          "Desaceleracao": "0x80000000"
+        },
+        "Homing": {
+          "ProbeFunction": 8000000,
+          "SetSwitchSpeed": 8000000,
+          "HomingAcceleration": 33554432,
+          "HomingTorqueLimit": 500,
+          "HomingDetectionTime": 2048,
+          "HomingDetectionVelocity": 33554432,
+          "CommunicationFunctionExtendedSetup": 40,
+          "HomingReturnSpeedLimit": 20000,
+          "HomingMode": 34,
+          "TouchProbe": 7
+        },
+        "Posicionamento": {
+          "TorqueMaximo": 500,
+          "TargetTorque": 500
+        }
+      }
+    })";
+
+    // Converter a string JSON para um objeto JSON
+    QJsonDocument jsonDoc = QJsonDocument::fromJson(jsonString.toUtf8());
+    if (jsonDoc.isNull() || !jsonDoc.isObject()) {
+        qDebug() << "Erro ao carregar JSON!";
+        return;
+    }
+
+    QJsonObject rootObj = jsonDoc.object();
+
+    // Criar o modelo de árvore
+    model_tree = new QStandardItemModel(this);
+    QStandardItem *rootItem = new QStandardItem("Servo Minas");
+    rootItem->setFlags(Qt::ItemIsEnabled);
+    model_tree->appendRow(rootItem);
+
+    // Adicionar os dados do JSON na árvore usando a função auxiliar
+    addJsonToTree(rootObj["ServoMinas"].toObject(), rootItem);
+
+    // Configurar a QTreeView
+    myParameters_TreeView = ui->treeView_engenharia;
+    myParameters_TreeView->setModel(model_tree);
+    myParameters_TreeView->setEditTriggers(QAbstractItemView::NoEditTriggers); // Inicialmente desativado
+
+
+    // Conectar a checkbox ao evento para habilitar/desabilitar edição
+    connect(ui->engineeringEdit_checkBox, &QCheckBox::toggled, this, &MainWindow::toggleTreeEditability);
+}
+
+void MainWindow::toggleTreeEditability(bool checked) {
+    qDebug() << "Checkbox ativada: " << checked;
+
+    for (int i = 0; i < model_tree->rowCount(); ++i) {
+        QStandardItem *categoryItem = model_tree->item(i); // Ex: "Limites de Segurança", "Homing", etc.
+        if (!categoryItem) continue;
+
+        for (int j = 0; j < categoryItem->rowCount(); ++j) {
+            QStandardItem *subCategoryItem = categoryItem->child(j); // Ex: "Torque de parada de emergência"
+            if (!subCategoryItem) continue;
+
+            // O terceiro nível é onde os valores numéricos ficam
+            for (int k = 0; k < subCategoryItem->rowCount(); ++k) {
+                QStandardItem *valueItem = subCategoryItem->child(k); // Ex: "100", "500", etc.
+                if (valueItem && valueItem->rowCount() == 0) { // Apenas nós folha
+                    valueItem->setFlags(checked
+                                            ? (Qt::ItemIsEditable | Qt::ItemIsEnabled | Qt::ItemIsSelectable)
+                                            : (Qt::ItemIsEnabled | Qt::ItemIsSelectable));
+                }
+            }
+        }
+    }
+
+    // Atualizar a QTreeView para refletir a edição
+    QModelIndex topLeft = model_tree->index(0, 0);
+    QModelIndex bottomRight = model_tree->index(model_tree->rowCount() - 1, 0);
+    emit model_tree->dataChanged(topLeft, bottomRight);
+
+    // Certificar-se de que os valores sejam editáveis com duplo clique
+    myParameters_TreeView->setEditTriggers(QAbstractItemView::DoubleClicked);
+    myParameters_TreeView->update();
+}

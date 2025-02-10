@@ -8,6 +8,12 @@
 #include <QTimer>
 #include <QDoubleSpinBox>
 #include <QThread>
+#include <QTreeView>
+#include <QStandardItemModel>
+#include <QJsonDocument>
+#include <QJsonObject>
+#include <QJsonValue>
+#include <QJsonArray>
 #include "sensorselectionwindow.h"
 #include "addsensordialog.h"
 #include "removesensordialog.h"
@@ -18,7 +24,6 @@
 #include "logservowindow.h"
 #include "loghandler.h"
 #include "usershandler.h"
-
 
 namespace Ui {
 class MainWindow;
@@ -112,9 +117,9 @@ private slots:
     //  Setter de dados do tipo SensorData
     void setSensorData(SensorData _data);
 
-
-
-
+    // Configurar a tela da engenharia
+    void configTag_engenharia();
+    void toggleTreeEditability(bool checked);
 
 
 private:
@@ -127,6 +132,10 @@ private:
     SensorSelectionWindow *sensorWindow;
     SensorData sensorData;
     LogServoWindow *logServoWindow;
+
+    //  Página de configurações da Engenharia
+    QTreeView *myParameters_TreeView ;
+    QStandardItemModel *model_tree ;
 
     //  Classe que cuida dos logs
     LogHandler * logHandler;
