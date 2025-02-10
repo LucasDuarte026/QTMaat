@@ -21,7 +21,6 @@ ServoMinas::ServoMinas(QString interface)
     period = 4e+6; // 4ms period in nanoseconds
     clock_gettime(CLOCK_REALTIME, &tick);
 
-
 }
 
 ServoMinas::~ServoMinas() {

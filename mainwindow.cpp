@@ -29,7 +29,6 @@ MainWindow::MainWindow(QWidget *parent)
     myAnimate_progress_bar->setMinimum(this->sensorData.start_angle);
     myAnimate_progress_bar->setMaximum(this->sensorData.arrive_angle);
     myAnimate_progress_bar->setValue(0);
-    ui->enable_servo_communication->setEnabled(false);
 
     if(myDial){
         configDial(myDial);
@@ -49,9 +48,9 @@ MainWindow::MainWindow(QWidget *parent)
     connect(ui->animate_dial_button, &QPushButton::clicked, this, &MainWindow::by_animate_dial_button_action);
 
 
-
+    // Valor aboluto em ângulo desejado
     connect(myInsertAbsolute, &QLineEdit::returnPressed, this, &MainWindow::insertedAngleToAchieve);
-
+    connect(ui->readServoPosition_button,&QPushButton::clicked, this, &MainWindow::readInputsUpdate);
     {// botões de limpeza e de filtro da aba de logs gerais
 
         originalGeneralLogContent = ui->general_log_screen->toPlainText();
@@ -73,21 +72,20 @@ MainWindow::MainWindow(QWidget *parent)
         connect(ui->filter_servo_log, &QLineEdit::textChanged, this, &MainWindow::filterServoLog);
     }
 
-    connect(myDial, &QDial::sliderReleased, this, [this]() {
-        double min = sensorData.start_angle ;
-        double max = sensorData.arrive_angle ;
-        double value = myDial->value();
-        qDebug() << "valor atual é:" << value;
-        if(value < min)
-            myDial->setValue(min);
-        else if( value> max)
-            myDial->setValue(max);
+    // connect(myDial, &QDial::sliderReleased, this, [this]() {
+    //     double min = sensorData.start_angle ;
+    //     double max = sensorData.arrive_angle ;
+    //     double value = myDial->value();
+    //     qDebug() << "valor atual é:" << value;
+    //     if(value < min)
+    //         myDial->setValue(min);
+    //     else if( value> max)
+    //         myDial->setValue(max);
 
-    });
+    // });
 
 
     // servo communication setup
-    ui->init_servo_button->setEnabled(true);
     ui->disable_servo_button->setEnabled(false);
     // Connect checkbox toggle to the MainWindow signal
     connect(ui->enable_servo_communication, &QPushButton::toggled, this, &MainWindow::servoCommunicationBox_stateChanged);
@@ -112,6 +110,7 @@ MainWindow::MainWindow(QWidget *parent)
     connect (this, &MainWindow::moveServoToAngularPositionSignal,myServo,&ServoMinas::moveAngularTo);
     connect (this, &MainWindow::startHomingSignal,myServo,&ServoMinas::moveToHome);
     connect (this, &MainWindow::resetErrorsSignal,myServo,&ServoMinas::resetErrors);
+    connect (this, &MainWindow::readInputNowSignal,myServo,&ServoMinas::readInput);
 
 
     //  Atualização dos dados da tela em função da modificação do input or output do servo vindo do PDO
@@ -137,44 +136,22 @@ MainWindow::~MainWindow()
 
 void MainWindow::by_animate_dial_button_action()
 {
-    if(sensorData.turn_direction =="CW")
-    {
-        double min = sensorData.start_angle;
-        double max= sensorData.arrive_angle;
-        double real_angle;
-        qDebug() << "Simulação de operação iniciada";
-        for(int i=10*min;i<=10*max;i++){
+    double min = sensorData.start_angle;
+    double max= sensorData.arrive_angle;
 
-            real_angle=double(i)/10;
-            qDebug() << "|" << min << "| -> |"  << max << "|     Posição do dial é:" << real_angle ;
-            this->setServoAngularPosition(real_angle,500);
-            myAnimate_progress_bar->setValue(real_angle);
-            myDial->setValue(real_angle);
-            QEventLoop loop;
-            QTimer::singleShot(1, &loop, &QEventLoop::quit); // Pausa por 100ms
-            loop.exec();
-        }
-    }
-    else if(sensorData.turn_direction =="CCW")
-    {
-        double min = sensorData.start_angle;
-        double max= sensorData.arrive_angle;
-        double real_angle;
-        qDebug() << "Simulação de operação iniciada";
-        for(int i=10*max;i>=10*min;i--){
+    double real_angle;
+    qDebug() << "Simulação de operação iniciada";
+    for(int i=10*min;i<=10*max;i++){
 
-            real_angle=double(i)/10;
-            qDebug() << "|" << max << "| -> |"  << min<< "|     Posição do dial é:" << real_angle ;
-            this->setServoAngularPosition(real_angle,500);
-            myAnimate_progress_bar->setValue(real_angle);
-            myDial->setValue(real_angle);
-            QEventLoop loop;
-            QTimer::singleShot(1, &loop, &QEventLoop::quit); // Pausa por 100ms
-            loop.exec();
-        }
+        real_angle=double(i)/10;
+        qDebug() << "|" << min << "| -> |"  << max << "|     Posição do dial é:" << real_angle ;
+        this->setServoAngularPosition(real_angle,500);
+        myAnimate_progress_bar->setValue(real_angle);
+        myDial->setValue(real_angle);
+        QEventLoop loop;
+        QTimer::singleShot(1, &loop, &QEventLoop::quit); // Pausa por 100ms
+        loop.exec();
     }
-    else
-        QMessageBox::critical(this, "Erro", "Direção de giro do modelo inserido incorreta\nDeve ser:   'CW' ou 'CCW'");
 
 }
 
@@ -184,11 +161,6 @@ void MainWindow::by_sensorSelected_action()
     // Cria a janela de seleção se ainda não existir
     sensorWindow = new SensorSelectionWindow(this);  // Define o MainWindow como pai
     connect(sensorWindow, &SensorSelectionWindow::sensorSelected, this, &MainWindow::updateSensorDependencies);
-    // connect(sensorWindow, &QObject::destroyed, this, [this]() {
-    //     sensorWindow = nullptr;
-    //     });
-
-
     sensorWindow->show();  // Mostra a janela de seleção
 
 }
@@ -448,15 +420,20 @@ void MainWindow::updateSensorDependencies(SensorData *_sensorData) {
     ui->label_angle_start->setText(QString::number(this->sensorData.start_angle));
     ui->label_angle_end->setText(QString::number(this->sensorData.arrive_angle));
     ui->label_turn_direction->setText(this->sensorData.turn_direction);
-    myDial->setValue(this->sensorData.start_angle);
     myAnimate_progress_bar->setMinimum(this->sensorData.start_angle);
     myAnimate_progress_bar->setMaximum(this->sensorData.arrive_angle);
+    if (this->sensorData.turn_direction == "CW"){
+        myDial->setInvertedAppearance(false);
+    }
+    else if (this->sensorData.turn_direction == "CCW"){
+        myDial->setInvertedAppearance(true);
+    }
+    else
+        QMessageBox::critical(this, "Erro", "Direção de giro do modelo inserido incorreta\nDeve ser:   'CW' ou 'CCW'");
+    myDial->setValue(this->sensorData.start_angle);
     // Atualizar os dados do dial
 
-
-
-
-    qDebug() << "\nSistema configurado e atualizado ao modelo:";
+    qDebug() << "\n\nSistema configurado e atualizado ao modelo:";
     qDebug() << "Model:" << sensorData.model_name;
     qDebug() << "Start Angle:" << sensorData.start_angle;
     qDebug() << "Arrive Angle:" << sensorData.arrive_angle;
@@ -602,17 +579,16 @@ void MainWindow::servoCommunicationBox_stateChanged(bool toogled)
 {
 
     ui->animate_dial_button->setEnabled(!toogled);
-
+    ui->readServoPosition_button->setEnabled(toogled);
     if(servoUP)
     {
         myServo->updateCommunicationState(toogled);
     }
     else{
         QMessageBox::critical(this, "Erro", "Servo não conectado");
-        // ui->enable_servo_communication->blockSignals(true);
         ui->enable_servo_communication->setEnabled(false);
-        // ui->enable_servo_communication->blockSignals(false);
         ui->animate_dial_button->setEnabled(toogled);
+
     }
 }
 
@@ -662,7 +638,6 @@ void MainWindow::insertedAngleToAchieve(){
     if(ok){
         // myServo->moveAbsoluteTo(insertedValue,velocity);
         emit moveServoToPositionSignal(insertedValue,velocity);
-        myDial->setValue(insertedValue);
     }
     else{
         QMessageBox::critical(this, "Erro", "Insira o dado flutuante corretamente entre os limites do modelo");
@@ -689,19 +664,31 @@ void MainWindow::setSensorData(SensorData _data)
     this->sensorData = _data;
 }
 
-
 //update mainwindow com informações vindas do servo
-void MainWindow::updateActualServoData(minas_control::MinasInput input){
-    actual_servo_value = input.position_actual_value; // valor absoluto unsigned int 32
-    int32_t signed_servovalue = static_cast<int32_t>(actual_servo_value); // valor com sinal de 32 bits mas com sinal (31 bits + negativo)
-    actual_servo_angle = static_cast<double>(actual_servo_value);
-    // qDebug() << "value: " << actual_servo_value  << "Angle" <<actual_servo_angle;
-    double mydial_value   =(360*signed_servovalue)/8388608;
-    myDial->setValue(mydial_value);
-    qDebug() << "mydialvalue:" << mydial_value;
-    ui->servo_hex_position->setText( QString::number(signed_servovalue,16).toUpper()+"h");
-
+double castoTo360(double value){
+    // Use modulo operator for efficiency
+    double result = fmod(fabs(value), 360.0);
+    return (value >= 0)? result: -result;
 }
+void MainWindow::updateActualServoData(minas_control::MinasInput input){
+    uint32_t raw_servo_value = input.position_actual_value; // valor absoluto unsigned int 32
+    int32_t signed_angle = static_cast<int32_t>(raw_servo_value); // valor com sinal de 32 bits
+
+    // Explicitly handle the sign
+    double absolute_angle = (signed_angle >= 0)?
+                                (360.0 * static_cast<double>(signed_angle) / 0x800000):
+                                (-360.0 * static_cast<double>(-signed_angle) / 0x800000);
+
+    double mydial_value = castoTo360(absolute_angle);
+    myDial->setValue(-mydial_value);
+    qDebug() << "| Absolute angle:" << absolute_angle;
+    ui->servo_hex_position->setText( QString::number(signed_angle,16).toUpper()+"h");
+    ui->servo_angle_position->setText(QString::number(absolute_angle,'f',4)+"º");
+}
+void MainWindow::readInputsUpdate(){
+    emit readInputNowSignal();
+}
+
 
 void MainWindow::operationOnOFFBehavior(bool status){
     // status true: em operação

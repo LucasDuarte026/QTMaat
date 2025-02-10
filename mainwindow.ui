@@ -53,7 +53,7 @@
           </widget>
          </item>
          <item>
-          <widget class="QGroupBox" name="groupBox">
+          <widget class="QGroupBox" name="groupBoxgg">
            <layout class="QVBoxLayout" name="verticalLayout_16">
             <item alignment="Qt::AlignmentFlag::AlignHCenter">
              <widget class="QLabel" name="user_label">
@@ -160,7 +160,7 @@
                 <enum>Qt::LayoutDirection::LeftToRight</enum>
                </property>
                <property name="text">
-                <string>N/A</string>
+                <string>360º</string>
                </property>
                <property name="alignment">
                 <set>Qt::AlignmentFlag::AlignRight|Qt::AlignmentFlag::AlignTrailing|Qt::AlignmentFlag::AlignVCenter</set>
@@ -190,7 +190,7 @@
                 <enum>Qt::LayoutDirection::LeftToRight</enum>
                </property>
                <property name="text">
-                <string>N/A</string>
+                <string>0º</string>
                </property>
                <property name="alignment">
                 <set>Qt::AlignmentFlag::AlignRight|Qt::AlignmentFlag::AlignTrailing|Qt::AlignmentFlag::AlignVCenter</set>
@@ -220,7 +220,7 @@
                 <enum>Qt::LayoutDirection::LeftToRight</enum>
                </property>
                <property name="text">
-                <string>N/A</string>
+                <string>CW</string>
                </property>
                <property name="alignment">
                 <set>Qt::AlignmentFlag::AlignRight|Qt::AlignmentFlag::AlignTrailing|Qt::AlignmentFlag::AlignVCenter</set>
@@ -236,7 +236,7 @@
       </item>
       <item>
        <widget class="QGroupBox" name="dial_elements">
-        <layout class="QVBoxLayout" name="verticalLayout_5" stretch="0,10,0">
+        <layout class="QVBoxLayout" name="verticalLayout_5" stretch="0,10,0,0">
          <item>
           <layout class="QVBoxLayout" name="verticalLayout_3" stretch="0">
            <item>
@@ -250,7 +250,7 @@
                 <enum>QFrame::Shadow::Raised</enum>
                </property>
                <layout class="QGridLayout" name="gridLayout">
-                <item row="0" column="0">
+                <item row="1" column="0">
                  <layout class="QVBoxLayout" name="verticalLayout_6">
                   <item>
                    <layout class="QHBoxLayout" name="horizontalLayout_8">
@@ -266,20 +266,20 @@
                     </item>
                    </layout>
                   </item>
-                  <item>
-                   <widget class="QProgressBar" name="animate_progress_bar">
-                    <property name="value">
-                     <number>0</number>
-                    </property>
-                    <property name="invertedAppearance">
-                     <bool>false</bool>
-                    </property>
-                    <property name="textDirection">
-                     <enum>QProgressBar::Direction::TopToBottom</enum>
-                    </property>
-                   </widget>
-                  </item>
                  </layout>
+                </item>
+                <item row="0" column="0">
+                 <widget class="QProgressBar" name="animate_progress_bar">
+                  <property name="value">
+                   <number>0</number>
+                  </property>
+                  <property name="invertedAppearance">
+                   <bool>false</bool>
+                  </property>
+                  <property name="textDirection">
+                   <enum>QProgressBar::Direction::TopToBottom</enum>
+                  </property>
+                 </widget>
                 </item>
                </layout>
               </widget>
@@ -321,6 +321,13 @@
           </widget>
          </item>
          <item>
+          <widget class="Line" name="line">
+           <property name="orientation">
+            <enum>Qt::Orientation::Horizontal</enum>
+           </property>
+          </widget>
+         </item>
+         <item>
           <widget class="QPushButton" name="disable_servo_button_2">
            <property name="text">
             <string>Parar operação no Servo </string>
@@ -343,7 +350,7 @@
          <enum>QTabWidget::TabPosition::North</enum>
         </property>
         <property name="currentIndex">
-         <number>0</number>
+         <number>1</number>
         </property>
         <property name="elideMode">
          <enum>Qt::TextElideMode::ElideMiddle</enum>
@@ -388,6 +395,9 @@
                </item>
                <item>
                 <widget class="QPushButton" name="enable_servo_communication">
+                 <property name="enabled">
+                  <bool>false</bool>
+                 </property>
                  <property name="sizePolicy">
                   <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
                    <horstretch>0</horstretch>
@@ -458,7 +468,7 @@
         </widget>
         <widget class="QWidget" name="tab">
          <attribute name="title">
-          <string>manual</string>
+          <string>Controle manual</string>
          </attribute>
          <layout class="QGridLayout" name="gridLayout_3">
           <item row="0" column="1">
@@ -474,6 +484,16 @@
              <number>10</number>
             </property>
             <item>
+             <widget class="QPushButton" name="readServoPosition_button">
+              <property name="enabled">
+               <bool>false</bool>
+              </property>
+              <property name="text">
+               <string>Atualizar</string>
+              </property>
+             </widget>
+            </item>
+            <item>
              <widget class="QLabel" name="label_5">
               <property name="text">
                <string>Ângulo atual:</string>
@@ -486,7 +506,7 @@
                <cursorShape>PointingHandCursor</cursorShape>
               </property>
               <property name="text">
-               <string>N/A</string>
+               <string>Ângulo</string>
               </property>
               <property name="alignment">
                <set>Qt::AlignmentFlag::AlignRight|Qt::AlignmentFlag::AlignTrailing|Qt::AlignmentFlag::AlignVCenter</set>
@@ -513,7 +533,7 @@
            </layout>
           </item>
           <item row="2" column="1">
-           <widget class="QGroupBox" name="groupBox">
+           <widget class="QGroupBox" name="groupBoxg">
             <property name="title">
              <string>Jog</string>
             </property>
@@ -609,6 +629,16 @@
            </widget>
           </item>
          </layout>
+        </widget>
+        <widget class="QWidget" name="tab_2">
+         <attribute name="title">
+          <string>Operação</string>
+         </attribute>
+        </widget>
+        <widget class="QWidget" name="tab_3">
+         <attribute name="title">
+          <string>Engenharia</string>
+         </attribute>
         </widget>
         <widget class="QWidget" name="micronasTab">
          <attribute name="title">
@@ -717,6 +747,9 @@
                      <widget class="QLineEdit" name="filter_general_log">
                       <property name="text">
                        <string/>
+                      </property>
+                      <property name="echoMode">
+                       <enum>QLineEdit::EchoMode::Normal</enum>
                       </property>
                      </widget>
                     </item>

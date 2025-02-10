@@ -31,7 +31,8 @@ public:
     void moveToHome(); // Move to home position
     void setActualPosition(uint32_t value);
     uint32_t getActualPosition();
-
+    minas_control::MinasOutput  readOutput();
+    minas_control::MinasInput   readInput();
 
 public slots:
     void updateCommunicationState(bool checked);
@@ -65,8 +66,7 @@ private:
     uint32_t actual_position;
     bool isCommunicationEnabled;
     void configureSafetyLimits(); // Configura os limites de segurança do servo
-    minas_control::MinasOutput  readOutput();
-    minas_control::MinasInput   readInput();
+
 
 };
 

@@ -51,6 +51,8 @@ signals:
     void moveServoToAngularPositionSignal(double angle,double velocity);
     void startHomingSignal();
     void resetErrorsSignal();
+    //requisitar leitura da posição atual do encoder
+    void readInputNowSignal();
 
 private slots:
     //Atualizar as dependências na mainWindow em função do sensor selecionado
@@ -66,6 +68,7 @@ private slots:
     void on_actionRemover_triggered();
 
     // Login e CRUD de usuários
+    void on_actionLogout_triggered();
     void on_login_menuBar_triggered();
     void on_actionVer_usu_rios_triggered();
     void on_actionAdicionar_2_triggered();
@@ -78,7 +81,6 @@ private slots:
     //  Estados do servo dentro do contexto da janela principal
     void servoCommunicationBox_stateChanged(bool checked);
     void servoState(bool servoSituation);
-
 
     //  Funções de controle EtherCAT
     void stopOperation();
@@ -97,6 +99,8 @@ private slots:
 
     //  Atualizar os dados na main page em função do estado atual do servo
     void updateActualServoData(minas_control::MinasInput input);
+    void readInputsUpdate();
+
     //  Atualizar a interface a depender do estado de operação do servo
     void operationOnOFFBehavior(bool status);
 
@@ -105,7 +109,6 @@ private slots:
 
 
 
-    void on_actionLogout_triggered();
 
 private:
     // ponteiros para as estruturas a baixo da janela principal
