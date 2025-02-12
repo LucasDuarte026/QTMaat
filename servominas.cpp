@@ -298,7 +298,7 @@ void ServoMinas::updateCommunicationState(bool checked) {
     isCommunicationEnabled = checked;
     if (isCommunicationEnabled) {
         qDebug() << "Servo habilitado. Executando ações...";
-        emit logMessage(" ✅ Servo habilitado para comunicação com o servo.");
+        emit logMessage(" ✅ Servo habilitado para comunicação.");
     } else {
         qDebug() << "Servo desabilitado. Apenas logando...";
         emit logMessage(" ❌ Servo desabilitado. Nenhuma ação será realizada.");

@@ -68,6 +68,7 @@ private slots:
     // Abrir a janela de seleção do sensor pela janela principal
     void by_sensorSelected_action();
 
+
     // CRUD de sensores
     void on_actionVer_Sensores_triggered();
     void on_actionAdicionar_triggered();
@@ -121,6 +122,9 @@ private slots:
     void configTag_engenharia();
     void toggleTreeEditability(bool checked);
 
+    // Aba de operação
+    void on_prepare_operation_released();   // botão de preparação do servo antes da operação
+    void on_start_operation_released();     // botão de iniciar operação do servo
 
 private:
     // ponteiros para as estruturas a baixo da janela principal
@@ -153,7 +157,9 @@ private:
     double actual_servo_angle;    // variável que guarda o ângulo atual do servo em graus
     bool servoUP;       // variável para ver se o servo está habilitado
 
+    //cofigurar o dial
     void configDial(QDial *_myDial);
+    void setDialDirection(QString direction_set);
 
 };
 

@@ -15,6 +15,7 @@
 #include <QtWidgets/QApplication>
 #include <QtWidgets/QCheckBox>
 #include <QtWidgets/QDial>
+#include <QtWidgets/QFormLayout>
 #include <QtWidgets/QFrame>
 #include <QtWidgets/QGridLayout>
 #include <QtWidgets/QGroupBox>
@@ -88,7 +89,9 @@ public:
     QHBoxLayout *horizontalLayout_8;
     QPushButton *animate_dial_button;
     QProgressBar *animate_progress_bar;
-    QSpacerItem *horizontalSpacer_2;
+    QVBoxLayout *verticalLayout_22;
+    QLabel *operation_label;
+    QLabel *actualOperationMode_label;
     QVBoxLayout *verticalLayout;
     QDial *plan_dial;
     QFrame *line;
@@ -128,6 +131,11 @@ public:
     QLabel *label;
     QLineEdit *absoluteRevolution;
     QWidget *tab_2;
+    QFormLayout *formLayout;
+    QGroupBox *groupBox_2;
+    QVBoxLayout *verticalLayout_21;
+    QPushButton *prepare_operation;
+    QPushButton *start_operation;
     QWidget *tab_3;
     QVBoxLayout *verticalLayout_20;
     QCheckBox *engineeringEdit_checkBox;
@@ -138,7 +146,7 @@ public:
     QGroupBox *logpositionservo;
     QHBoxLayout *horizontalLayout_7;
     QPushButton *readServoPosition_button;
-    QLabel *label_5;
+    QLabel *actualAngelIndicator;
     QLabel *servo_angle_position;
     QLabel *label_6;
     QLabel *servo_hex_position;
@@ -358,6 +366,12 @@ public:
         horizontalLayout_5->setObjectName("horizontalLayout_5");
         frame = new QFrame(dial_elements);
         frame->setObjectName("frame");
+        QSizePolicy sizePolicy(QSizePolicy::Policy::Maximum, QSizePolicy::Policy::Preferred);
+        sizePolicy.setHorizontalStretch(0);
+        sizePolicy.setVerticalStretch(0);
+        sizePolicy.setHeightForWidth(frame->sizePolicy().hasHeightForWidth());
+        frame->setSizePolicy(sizePolicy);
+        frame->setMaximumSize(QSize(300, 16777215));
         frame->setFrameShape(QFrame::Shape::StyledPanel);
         frame->setFrameShadow(QFrame::Shadow::Raised);
         gridLayout = new QGridLayout(frame);
@@ -391,9 +405,20 @@ public:
 
         horizontalLayout_5->addWidget(frame);
 
-        horizontalSpacer_2 = new QSpacerItem(40, 20, QSizePolicy::Policy::Expanding, QSizePolicy::Policy::Minimum);
+        verticalLayout_22 = new QVBoxLayout();
+        verticalLayout_22->setObjectName("verticalLayout_22");
+        operation_label = new QLabel(dial_elements);
+        operation_label->setObjectName("operation_label");
 
-        horizontalLayout_5->addItem(horizontalSpacer_2);
+        verticalLayout_22->addWidget(operation_label, 0, Qt::AlignmentFlag::AlignHCenter);
+
+        actualOperationMode_label = new QLabel(dial_elements);
+        actualOperationMode_label->setObjectName("actualOperationMode_label");
+
+        verticalLayout_22->addWidget(actualOperationMode_label, 0, Qt::AlignmentFlag::AlignHCenter);
+
+
+        horizontalLayout_5->addLayout(verticalLayout_22);
 
         verticalLayout = new QVBoxLayout();
         verticalLayout->setObjectName("verticalLayout");
@@ -476,11 +501,11 @@ public:
         enable_servo_communication = new QPushButton(groupBox);
         enable_servo_communication->setObjectName("enable_servo_communication");
         enable_servo_communication->setEnabled(false);
-        QSizePolicy sizePolicy(QSizePolicy::Policy::MinimumExpanding, QSizePolicy::Policy::Fixed);
-        sizePolicy.setHorizontalStretch(0);
-        sizePolicy.setVerticalStretch(0);
-        sizePolicy.setHeightForWidth(enable_servo_communication->sizePolicy().hasHeightForWidth());
-        enable_servo_communication->setSizePolicy(sizePolicy);
+        QSizePolicy sizePolicy1(QSizePolicy::Policy::MinimumExpanding, QSizePolicy::Policy::Fixed);
+        sizePolicy1.setHorizontalStretch(0);
+        sizePolicy1.setVerticalStretch(0);
+        sizePolicy1.setHeightForWidth(enable_servo_communication->sizePolicy().hasHeightForWidth());
+        enable_servo_communication->setSizePolicy(sizePolicy1);
         enable_servo_communication->setCursor(QCursor(Qt::CursorShape::PointingHandCursor));
         QIcon icon11(QIcon::fromTheme(QIcon::ThemeIcon::UserAvailable));
         enable_servo_communication->setIcon(icon11);
@@ -546,11 +571,11 @@ public:
 
         step_lineEdit = new QLineEdit(groupBoxg);
         step_lineEdit->setObjectName("step_lineEdit");
-        QSizePolicy sizePolicy1(QSizePolicy::Policy::Minimum, QSizePolicy::Policy::Fixed);
-        sizePolicy1.setHorizontalStretch(0);
-        sizePolicy1.setVerticalStretch(0);
-        sizePolicy1.setHeightForWidth(step_lineEdit->sizePolicy().hasHeightForWidth());
-        step_lineEdit->setSizePolicy(sizePolicy1);
+        QSizePolicy sizePolicy2(QSizePolicy::Policy::Minimum, QSizePolicy::Policy::Fixed);
+        sizePolicy2.setHorizontalStretch(0);
+        sizePolicy2.setVerticalStretch(0);
+        sizePolicy2.setHeightForWidth(step_lineEdit->sizePolicy().hasHeightForWidth());
+        step_lineEdit->setSizePolicy(sizePolicy2);
         step_lineEdit->setMinimumSize(QSize(240, 0));
         step_lineEdit->setMaximumSize(QSize(400, 16777215));
         step_lineEdit->setLayoutDirection(Qt::LayoutDirection::LeftToRight);
@@ -570,8 +595,8 @@ public:
 
         amountJog_lineEdit = new QLineEdit(groupBoxg);
         amountJog_lineEdit->setObjectName("amountJog_lineEdit");
-        sizePolicy1.setHeightForWidth(amountJog_lineEdit->sizePolicy().hasHeightForWidth());
-        amountJog_lineEdit->setSizePolicy(sizePolicy1);
+        sizePolicy2.setHeightForWidth(amountJog_lineEdit->sizePolicy().hasHeightForWidth());
+        amountJog_lineEdit->setSizePolicy(sizePolicy2);
         amountJog_lineEdit->setMinimumSize(QSize(240, 0));
         amountJog_lineEdit->setMaximumSize(QSize(400, 16777215));
         amountJog_lineEdit->setLayoutDirection(Qt::LayoutDirection::LeftToRight);
@@ -636,6 +661,27 @@ public:
         config_tag->addTab(tab, QString());
         tab_2 = new QWidget();
         tab_2->setObjectName("tab_2");
+        formLayout = new QFormLayout(tab_2);
+        formLayout->setObjectName("formLayout");
+        groupBox_2 = new QGroupBox(tab_2);
+        groupBox_2->setObjectName("groupBox_2");
+        verticalLayout_21 = new QVBoxLayout(groupBox_2);
+        verticalLayout_21->setObjectName("verticalLayout_21");
+        prepare_operation = new QPushButton(groupBox_2);
+        prepare_operation->setObjectName("prepare_operation");
+        prepare_operation->setEnabled(false);
+
+        verticalLayout_21->addWidget(prepare_operation);
+
+        start_operation = new QPushButton(groupBox_2);
+        start_operation->setObjectName("start_operation");
+        start_operation->setEnabled(false);
+
+        verticalLayout_21->addWidget(start_operation);
+
+
+        formLayout->setWidget(0, QFormLayout::LabelRole, groupBox_2);
+
         config_tag->addTab(tab_2, QString());
         tab_3 = new QWidget();
         tab_3->setObjectName("tab_3");
@@ -669,11 +715,11 @@ public:
 
         frame_2 = new QFrame(centralwidget);
         frame_2->setObjectName("frame_2");
-        QSizePolicy sizePolicy2(QSizePolicy::Policy::Preferred, QSizePolicy::Policy::Expanding);
-        sizePolicy2.setHorizontalStretch(0);
-        sizePolicy2.setVerticalStretch(0);
-        sizePolicy2.setHeightForWidth(frame_2->sizePolicy().hasHeightForWidth());
-        frame_2->setSizePolicy(sizePolicy2);
+        QSizePolicy sizePolicy3(QSizePolicy::Policy::Preferred, QSizePolicy::Policy::Expanding);
+        sizePolicy3.setHorizontalStretch(0);
+        sizePolicy3.setVerticalStretch(0);
+        sizePolicy3.setHeightForWidth(frame_2->sizePolicy().hasHeightForWidth());
+        frame_2->setSizePolicy(sizePolicy3);
         frame_2->setFrameShape(QFrame::Shape::StyledPanel);
         frame_2->setFrameShadow(QFrame::Shadow::Raised);
         verticalLayout_11 = new QVBoxLayout(frame_2);
@@ -690,10 +736,10 @@ public:
 
         horizontalLayout_7->addWidget(readServoPosition_button);
 
-        label_5 = new QLabel(logpositionservo);
-        label_5->setObjectName("label_5");
+        actualAngelIndicator = new QLabel(logpositionservo);
+        actualAngelIndicator->setObjectName("actualAngelIndicator");
 
-        horizontalLayout_7->addWidget(label_5, 0, Qt::AlignmentFlag::AlignRight);
+        horizontalLayout_7->addWidget(actualAngelIndicator, 0, Qt::AlignmentFlag::AlignRight);
 
         servo_angle_position = new QLabel(logpositionservo);
         servo_angle_position->setObjectName("servo_angle_position");
@@ -715,11 +761,11 @@ public:
 
         servo_velocity_setup = new QLineEdit(logpositionservo);
         servo_velocity_setup->setObjectName("servo_velocity_setup");
-        QSizePolicy sizePolicy3(QSizePolicy::Policy::Expanding, QSizePolicy::Policy::Fixed);
-        sizePolicy3.setHorizontalStretch(100);
-        sizePolicy3.setVerticalStretch(0);
-        sizePolicy3.setHeightForWidth(servo_velocity_setup->sizePolicy().hasHeightForWidth());
-        servo_velocity_setup->setSizePolicy(sizePolicy3);
+        QSizePolicy sizePolicy4(QSizePolicy::Policy::Expanding, QSizePolicy::Policy::Fixed);
+        sizePolicy4.setHorizontalStretch(100);
+        sizePolicy4.setVerticalStretch(0);
+        sizePolicy4.setHeightForWidth(servo_velocity_setup->sizePolicy().hasHeightForWidth());
+        servo_velocity_setup->setSizePolicy(sizePolicy4);
         servo_velocity_setup->setMinimumSize(QSize(100, 0));
         servo_velocity_setup->setMaximumSize(QSize(300, 16777215));
         servo_velocity_setup->setSizeIncrement(QSize(50, 0));
@@ -731,8 +777,8 @@ public:
 
         logPlaceHolder = new QWidget(frame_2);
         logPlaceHolder->setObjectName("logPlaceHolder");
-        sizePolicy2.setHeightForWidth(logPlaceHolder->sizePolicy().hasHeightForWidth());
-        logPlaceHolder->setSizePolicy(sizePolicy2);
+        sizePolicy3.setHeightForWidth(logPlaceHolder->sizePolicy().hasHeightForWidth());
+        logPlaceHolder->setSizePolicy(sizePolicy3);
         verticalLayout_9 = new QVBoxLayout(logPlaceHolder);
         verticalLayout_9->setObjectName("verticalLayout_9");
         tab_general = new QTabWidget(logPlaceHolder);
@@ -748,8 +794,8 @@ public:
         horizontalLayout_11->setObjectName("horizontalLayout_11");
         filter_servo_log = new QLineEdit(servo_output);
         filter_servo_log->setObjectName("filter_servo_log");
-        sizePolicy.setHeightForWidth(filter_servo_log->sizePolicy().hasHeightForWidth());
-        filter_servo_log->setSizePolicy(sizePolicy);
+        sizePolicy1.setHeightForWidth(filter_servo_log->sizePolicy().hasHeightForWidth());
+        filter_servo_log->setSizePolicy(sizePolicy1);
         filter_servo_log->setEchoMode(QLineEdit::EchoMode::Normal);
         filter_servo_log->setCursorPosition(0);
 
@@ -891,7 +937,7 @@ public:
 
         retranslateUi(MainWindow);
 
-        config_tag->setCurrentIndex(3);
+        config_tag->setCurrentIndex(1);
         tab_general->setCurrentIndex(0);
 
 
@@ -919,12 +965,14 @@ public:
         sensorBox->setTitle(QCoreApplication::translate("MainWindow", "Sele\303\247\303\243o do sensor", nullptr));
         sensorSelected->setText(QCoreApplication::translate("MainWindow", "Selecionar modelo ...", nullptr));
         label_4->setText(QCoreApplication::translate("MainWindow", "\303\202ngulo de partida", nullptr));
-        label_angle_start->setText(QCoreApplication::translate("MainWindow", "360\302\272", nullptr));
+        label_angle_start->setText(QCoreApplication::translate("MainWindow", "---\302\272", nullptr));
         label_3->setText(QCoreApplication::translate("MainWindow", "\303\202ngulo de chegada", nullptr));
-        label_angle_end->setText(QCoreApplication::translate("MainWindow", "0\302\272", nullptr));
+        label_angle_end->setText(QCoreApplication::translate("MainWindow", "---\302\272", nullptr));
         label_7->setText(QCoreApplication::translate("MainWindow", "Sentido de giro", nullptr));
-        label_turn_direction->setText(QCoreApplication::translate("MainWindow", "CW", nullptr));
+        label_turn_direction->setText(QCoreApplication::translate("MainWindow", "---", nullptr));
         animate_dial_button->setText(QCoreApplication::translate("MainWindow", "Simular opera\303\247\303\243o", nullptr));
+        operation_label->setText(QCoreApplication::translate("MainWindow", "Em modo:", nullptr));
+        actualOperationMode_label->setText(QCoreApplication::translate("MainWindow", "SIMULA\303\207\303\203O", nullptr));
         disable_servo_button_2->setText(QCoreApplication::translate("MainWindow", "Parar opera\303\247\303\243o no Servo ", nullptr));
         groupBox->setTitle(QCoreApplication::translate("MainWindow", "Servo Minas", nullptr));
         init_servo_button->setText(QCoreApplication::translate("MainWindow", "Inicializar Servo Minas", nullptr));
@@ -935,21 +983,27 @@ public:
         config_tag->setTabText(config_tag->indexOf(servo_tab), QCoreApplication::translate("MainWindow", "Configura\303\247\303\265es do servo", nullptr));
         groupBoxg->setTitle(QCoreApplication::translate("MainWindow", "Jog", nullptr));
         label_10->setText(QCoreApplication::translate("MainWindow", "\303\202ngulo do passo", nullptr));
+#if QT_CONFIG(tooltip)
+        step_lineEdit->setToolTip(QCoreApplication::translate("MainWindow", "em graus", nullptr));
+#endif // QT_CONFIG(tooltip)
         step_lineEdit->setPlaceholderText(QCoreApplication::translate("MainWindow", "Passo em graus(\302\272)", nullptr));
         label_9->setText(QCoreApplication::translate("MainWindow", "Passos por jog", nullptr));
         amountJog_lineEdit->setPlaceholderText(QCoreApplication::translate("MainWindow", "Quantidade de passos por jog", nullptr));
         left_jog->setText(QString());
         right_jog->setText(QString());
-        groupBox_3->setTitle(QCoreApplication::translate("MainWindow", "Movimenta\303\247\303\243o absoluta", nullptr));
+        groupBox_3->setTitle(QCoreApplication::translate("MainWindow", "Movimenta\303\247\303\243o absoluta - referencial sempre CCW", nullptr));
         label->setText(QCoreApplication::translate("MainWindow", "\303\202ngulo desejado:", nullptr));
-        absoluteRevolution->setPlaceholderText(QCoreApplication::translate("MainWindow", "Graus (\302\272)", nullptr));
+        absoluteRevolution->setPlaceholderText(QCoreApplication::translate("MainWindow", "Graus (\302\272) - CCW", nullptr));
         config_tag->setTabText(config_tag->indexOf(tab), QCoreApplication::translate("MainWindow", "Controle manual", nullptr));
+        groupBox_2->setTitle(QCoreApplication::translate("MainWindow", "Opera\303\247\303\243o no Sensor", nullptr));
+        prepare_operation->setText(QCoreApplication::translate("MainWindow", "Posicionar servo", nullptr));
+        start_operation->setText(QCoreApplication::translate("MainWindow", "Iniciar opera\303\247\303\243o", nullptr));
         config_tag->setTabText(config_tag->indexOf(tab_2), QCoreApplication::translate("MainWindow", "Opera\303\247\303\243o", nullptr));
         engineeringEdit_checkBox->setText(QCoreApplication::translate("MainWindow", "Editar", nullptr));
         config_tag->setTabText(config_tag->indexOf(tab_3), QCoreApplication::translate("MainWindow", "Engenharia", nullptr));
         config_tag->setTabText(config_tag->indexOf(micronasTab), QCoreApplication::translate("MainWindow", "Configura\303\247\303\265es Micronas", nullptr));
         readServoPosition_button->setText(QCoreApplication::translate("MainWindow", "Atualizar", nullptr));
-        label_5->setText(QCoreApplication::translate("MainWindow", "\303\202ngulo atual:", nullptr));
+        actualAngelIndicator->setText(QCoreApplication::translate("MainWindow", "\303\202ngulo atual:", nullptr));
         servo_angle_position->setText(QCoreApplication::translate("MainWindow", "\303\202ngulo", nullptr));
         label_6->setText(QCoreApplication::translate("MainWindow", " >", nullptr));
         servo_hex_position->setText(QCoreApplication::translate("MainWindow", "Posi\303\247\303\243o em hexa", nullptr));
