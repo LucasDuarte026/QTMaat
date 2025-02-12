@@ -685,6 +685,70 @@ void MainWindow::insertedAngleToAchieve(){
 
 }
 
+// Posicionar o servo a posição inicial dependendo do sensor
+void MainWindow::on_prepare_operation_released()
+{
+
+    int velocity = 50; // valor padrão
+    bool ok=1;
+    if(!ui->servo_velocity_setup->text().isEmpty()) // se ouver algo dentro da celular de velocidade, irá usar o valor de la
+    {
+        velocity = ui->servo_velocity_setup->text().toDouble(&ok);
+    }
+    if(ok){
+        if(sensorData.turn_direction== "CW"){
+            setDialDirection("CCW");
+            emit moveServoToPositionSignal(-sensorData.start_angle,velocity);
+
+        }
+        else if(sensorData.turn_direction== "CCW"){
+            setDialDirection("CCW");
+            emit moveServoToPositionSignal(sensorData.start_angle,velocity);
+        }
+        else{
+            QMessageBox::critical(this, "Erro", "Direção de giro do modelo inserido incorreta\nDeve ser:   'CW' ou 'CCW'");
+            return;
+        }
+        qDebug() << "\n -> Posicionando o servo para o ângulo X, início do modelo Y\n";
+    }
+    else{
+        QMessageBox::critical(this, "Erro", "Insira o dado flutuante corretamente para a velocidade (0 - 550 rad/s)");
+    }
+    qDebug() << "\n -> Operação iniciada do com o modelo "<< sensorData.model_name<<", ângulo "<< sensorData.start_angle<<" ao ângulo "<< sensorData.arrive_angle<<" no sentido "<< sensorData.turn_direction<<"\n";
+
+}
+
+// Posicionar o servo a posição final dependendo do sensor
+void MainWindow::on_start_operation_released()
+{
+    int velocity = 50; // valor padrão
+    bool ok=1;
+    if(!ui->servo_velocity_setup->text().isEmpty()) // se ouver algo dentro da celular de velocidade, irá usar o valor de la
+    {
+        velocity = ui->servo_velocity_setup->text().toDouble(&ok);
+    }
+    if(ok){
+        if(sensorData.turn_direction== "CW"){
+            setDialDirection("CCW");
+            emit moveServoToPositionSignal(-sensorData.arrive_angle,velocity);
+
+        }
+        else if(sensorData.turn_direction== "CCW"){
+            setDialDirection("CCW");
+            emit moveServoToPositionSignal(sensorData.arrive_angle,velocity);
+        }
+        else{
+            QMessageBox::critical(this, "Erro", "Direção de giro do modelo inserido incorreta\nDeve ser:   'CW' ou 'CCW'");
+            return;
+        }
+        qDebug() << "\n -> Posicionando o servo para o ângulo X, início do modelo Y\n";
+    }
+    else{
+        QMessageBox::critical(this, "Erro", "Insira o dado flutuante corretamente para a velocidade (0 - 550 rad/s)");
+    }
+}
+
+
 void MainWindow::clearServoErrors()
 {
     emit resetErrorsSignal();
@@ -768,16 +832,18 @@ void MainWindow::updateActualServoData(minas_control::MinasInput input){
     uint32_t raw_servo_value = input.position_actual_value; // valor absoluto unsigned int 32
     int32_t signed_angle = static_cast<int32_t>(raw_servo_value); // valor com sinal de 32 bits
 
-    // Explicitly handle the sign
+    // corrigir o valor negativo com tratamento em hexa uint
     double absolute_angle = (signed_angle >= 0)?
                                 (360.0 * static_cast<double>(signed_angle) / 0x800000):
                                 (-360.0 * static_cast<double>(-signed_angle) / 0x800000);
 
-    double mydial_value = castoTo360(absolute_angle);
-    myDial->setValue(-mydial_value);
-    qDebug() << "| Absolute angle:" << absolute_angle;
+    double mydial_value = castoTo360(absolute_angle); // corrigir voltar > |+-360|
+    myDial->setValue(-mydial_value); // dar update no dial
+    qDebug() << "| Absolute angle:" << absolute_angle; // mostrar a evolução do angulo ao ser lido
+    //  Atualizar a tela
     ui->servo_hex_position->setText( QString::number(signed_angle,16).toUpper()+"h");
     ui->servo_angle_position->setText(QString::number(absolute_angle,'f',4)+"º");
+    //  Atualizar a barra de progresso
     if(sensorData.turn_direction=="CW")
         myAnimate_progress_bar->setValue(-absolute_angle);
     if(sensorData.turn_direction=="CCW")
@@ -793,6 +859,7 @@ void MainWindow::operationOnOFFBehavior(bool status){
     // status true: em operação
     // status false: não está em operação
 
+    //A ideia é bloquear o usuário de dar overload de requisições ao drive
     ui->homing_button->setEnabled(!status);
     myInsertAbsolute->setEnabled(!status);
     ui->right_jog->setEnabled(!status);
@@ -934,65 +1001,4 @@ void MainWindow::toggleTreeEditability(bool checked) {
     myParameters_TreeView->update();
 }
 
-void MainWindow::on_prepare_operation_released()
-{
-
-    int velocity = 50; // valor padrão
-    bool ok=1;
-    if(!ui->servo_velocity_setup->text().isEmpty()) // se ouver algo dentro da celular de velocidade, irá usar o valor de la
-    {
-        velocity = ui->servo_velocity_setup->text().toDouble(&ok);
-    }
-    if(ok){
-        if(sensorData.turn_direction== "CW"){
-            setDialDirection("CCW");
-            emit moveServoToPositionSignal(-sensorData.start_angle,velocity);
-
-        }
-        else if(sensorData.turn_direction== "CCW"){
-            setDialDirection("CCW");
-            emit moveServoToPositionSignal(sensorData.start_angle,velocity);
-        }
-        else{
-            QMessageBox::critical(this, "Erro", "Direção de giro do modelo inserido incorreta\nDeve ser:   'CW' ou 'CCW'");
-            return;
-        }
-        qDebug() << "\n -> Posicionando o servo para o ângulo X, início do modelo Y\n";
-    }
-    else{
-        QMessageBox::critical(this, "Erro", "Insira o dado flutuante corretamente para a velocidade (0 - 550 rad/s)");
-    }
-    qDebug() << "\n -> Operação iniciada do com o modelo "<< sensorData.model_name<<", ângulo "<< sensorData.start_angle<<" ao ângulo "<< sensorData.arrive_angle<<" no sentido "<< sensorData.turn_direction<<"\n";
-
-}
-
-
-void MainWindow::on_start_operation_released()
-{
-    int velocity = 50; // valor padrão
-    bool ok=1;
-    if(!ui->servo_velocity_setup->text().isEmpty()) // se ouver algo dentro da celular de velocidade, irá usar o valor de la
-    {
-        velocity = ui->servo_velocity_setup->text().toDouble(&ok);
-    }
-    if(ok){
-        if(sensorData.turn_direction== "CW"){
-            setDialDirection("CCW");
-            emit moveServoToPositionSignal(-sensorData.arrive_angle,velocity);
-
-        }
-        else if(sensorData.turn_direction== "CCW"){
-            setDialDirection("CCW");
-            emit moveServoToPositionSignal(sensorData.arrive_angle,velocity);
-        }
-        else{
-            QMessageBox::critical(this, "Erro", "Direção de giro do modelo inserido incorreta\nDeve ser:   'CW' ou 'CCW'");
-            return;
-        }
-        qDebug() << "\n -> Posicionando o servo para o ângulo X, início do modelo Y\n";
-    }
-    else{
-        QMessageBox::critical(this, "Erro", "Insira o dado flutuante corretamente para a velocidade (0 - 550 rad/s)");
-    }
-}
 
