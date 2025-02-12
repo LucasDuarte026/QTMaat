@@ -56,7 +56,7 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
 
         usershandler.h usershandler.cpp
         worker.h worker.cpp
-        serialhandler.h serialhandler.cpp
+        serialmicronas.h serialmicronas.cpp
 
 
     )

@@ -24,7 +24,7 @@
 #include "logservowindow.h"
 #include "loghandler.h"
 #include "usershandler.h"
-#include "serialhandler.h"
+#include "serialmicronas.h"
 
 namespace Ui {
 class MainWindow;
@@ -162,7 +162,7 @@ private:
     void configDial(QDial *_myDial);
     void setDialDirection(QString direction_set);
 
-    SerialHandler *myMicronas;
+    SerialMicronas *myMicronas;
 };
 
 #endif // MAINWINDOW_H
