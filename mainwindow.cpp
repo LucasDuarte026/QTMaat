@@ -37,6 +37,9 @@ MainWindow::MainWindow(QWidget *parent)
     //  Engenharia tab
     configTag_engenharia();
 
+    // tab de comunucação com o micronas
+    myMicronas = new SerialHandler(this);
+
     logHandler = new LogHandler(ui->general_log_screen, this);
     logServoWindow = new LogServoWindow(ui->servo_log_screen, ui->filter_servo_log,
                                         ui->clean_log_button, this);

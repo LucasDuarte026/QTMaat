@@ -5,13 +5,16 @@ project(QTMaat VERSION 0.1 LANGUAGES CXX)
 set(CMAKE_AUTOUIC ON)
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
-
+set(CMAKE_PREFIX_PATH "~/Qt/6.8.2/gcc_64")
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Widgets)
 find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Widgets)
+find_package(Qt6 REQUIRED COMPONENTS Widgets SerialPort)
 
+# Find serial
+find_package(Qt6 COMPONENTS SerialPort REQUIRED)
 # Find Boost
 find_package(Boost REQUIRED COMPONENTS system filesystem thread)  # Adjust components as needed
 if(Boost_FOUND)
@@ -53,6 +56,7 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
 
         usershandler.h usershandler.cpp
         worker.h worker.cpp
+        serialhandler.h serialhandler.cpp
 
 
     )
@@ -76,6 +80,7 @@ endif()
 
 target_link_libraries(QTMaat
     PRIVATE Qt${QT_VERSION_MAJOR}::Widgets
+    PRIVATE Qt6::SerialPort  # QtSerialPort is linked
     PRIVATE ${Boost_LIBRARIES}       # Link Boost libraries
     PRIVATE ${CMAKE_SOURCE_DIR}/lib/libsoem.a  # Link custom static library
 )

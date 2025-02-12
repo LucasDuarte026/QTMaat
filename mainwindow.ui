@@ -383,7 +383,7 @@
          <enum>QTabWidget::TabPosition::North</enum>
         </property>
         <property name="currentIndex">
-         <number>1</number>
+         <number>4</number>
         </property>
         <property name="elideMode">
          <enum>Qt::TextElideMode::ElideMiddle</enum>
@@ -951,6 +951,11 @@
                  </layout>
                 </item>
                </layout>
+              </widget>
+              <widget class="QWidget" name="tab_4">
+               <attribute name="title">
+                <string>Micronas</string>
+               </attribute>
               </widget>
               <widget class="QWidget" name="general_output">
                <attribute name="title">
