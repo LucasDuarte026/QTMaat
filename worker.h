@@ -6,12 +6,13 @@
 #include <QTimer>
 #include "ethercat_manager.h"
 #include "minas_client.h"
+#include "datatypes.h"
 
 class Worker : public QObject {
     Q_OBJECT
 
 public:
-    explicit Worker(minas_control::MinasClient *_client,QObject* parent = nullptr);
+    explicit Worker(minas_control::MinasClient *_client,EngParameters *engParameters,QObject* parent = nullptr);
 
 public slots:
     void threadMoveToHome();
@@ -33,6 +34,7 @@ private:
     struct timespec tick;// tick de tempo
     int period;
     minas_control::MinasClient *client;
+    EngParameters *engParameters;
 };
 
 #endif // WORKER_H

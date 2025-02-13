@@ -127,6 +127,10 @@ private slots:
     void on_prepare_operation_released();   // botão de preparação do servo antes da operação
     void on_start_operation_released();     // botão de iniciar operação do servo
 
+    // Comunicação micronas
+    void on_micronas_connect_released();
+    void errorFromMicronas(const QString &errorMessage);
+
 private:
     // ponteiros para as estruturas a baixo da janela principal
     Ui::MainWindow *ui;
@@ -163,6 +167,11 @@ private:
     void setDialDirection(QString direction_set);
 
     SerialMicronas *myMicronas;
+
+
+    // variáveis da engenharia
+    EngParameters *engParameters;
+
 };
 
 #endif // MAINWINDOW_H

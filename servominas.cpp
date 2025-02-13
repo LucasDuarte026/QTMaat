@@ -6,7 +6,7 @@
 
 #define NSEC_PER_SECOND 1e+9
 
-ServoMinas::ServoMinas(QString interface)
+ServoMinas::ServoMinas(QString interface, EngParameters *_engParameters)
     : QObject()
     ,   interfaceName(interface)
     ,   manager(nullptr)
@@ -14,6 +14,7 @@ ServoMinas::ServoMinas(QString interface)
     ,   isCommunicationEnabled(false)
     ,   worker(nullptr)
     ,   workerThread(nullptr)
+    ,   engParameters(_engParameters)
 
 {
 
@@ -147,11 +148,11 @@ void ServoMinas::resetErrors() {
 void ServoMinas::configureSafetyLimits() {
     QString message;
     if (client) {
-        client->setTrqueForEmergencyStop(100);
-        client->setOverLoadLevel(70);
-        client->setOverSpeedLevel(600);
-        client->setMotorWorkingRange(0.1);
-        client->setInterpolationTimePeriod(4000);
+        client->setTrqueForEmergencyStop(engParameters->safetyLimits.emergencyStopTorque                                                                    );
+        client->setOverLoadLevel(engParameters->safetyLimits.overloadLevel);
+        client->setOverSpeedLevel(engParameters->safetyLimits.overspeedLevel);
+        client->setMotorWorkingRange(engParameters->safetyLimits.motorWorkingLimit);
+        client->setInterpolationTimePeriod(engParameters->safetyLimits.timeInterpolationPeriod);
     } else {
         message = "Cliente não inicializado. Não é possível configurar limites de segurança.";
         emit logMessage(message);
@@ -176,7 +177,7 @@ void ServoMinas::moveToHome() {
     // }
     workerThread = new QThread();
     if(client)
-        worker = new Worker(client);
+        worker = new Worker(client,engParameters);
 
     worker->moveToThread(workerThread);
     /*  conexões de controle da worker:
@@ -224,7 +225,7 @@ void ServoMinas::moveAbsoluteTo(double position, double velocity ) {
     // }
     workerThread = new QThread();
     if(client)
-        worker = new Worker(client);
+        worker = new Worker(client,engParameters);
 
     worker->moveToThread(workerThread);
 
@@ -267,7 +268,7 @@ void ServoMinas::moveOffset(double amount, double velocity,double step) {
     // }
     workerThread = new QThread();
     if(client)
-        worker = new Worker(client);
+        worker = new Worker(client,engParameters);
 
     worker->moveToThread(workerThread);
 

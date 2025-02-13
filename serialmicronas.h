@@ -15,12 +15,17 @@ public:
 
     bool openPort(const QString &portName);
     void closePort();
-    bool sendCommand(const QString &command);
-    QString getLastResponse() const;
+    bool sendCommand(const QByteArray &command);
+    QByteArray readResponse();
+
+    bool setBaseAddress(uint8_t baseAddress);
+    QByteArray readRegister(uint8_t address);
+    bool writeRegister(uint8_t address, uint16_t data);
 
 private:
     QSerialPort *serial;
-    QString lastResponse;
+    uint8_t calculateParity(uint8_t command, uint8_t address);
+    uint8_t calculateCRC(uint32_t data, uint8_t size);
 
     void processResponse(const QByteArray &response);
     QString interpretErrorCode(int errorCode);

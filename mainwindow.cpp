@@ -35,6 +35,7 @@ MainWindow::MainWindow(QWidget *parent)
     }
 
     //  Engenharia tab
+    EngParameters *engParameters = new EngParameters;
     configTag_engenharia();
 
     // tab de comunucação com o micronas
@@ -45,7 +46,7 @@ MainWindow::MainWindow(QWidget *parent)
                                         ui->clean_log_button, this);
     //  ServoMinas deploy
     myServoThread = new QThread(this); // inicializa uma thread
-    myServo = new ServoMinas("enp2s0"); // enp2s0 para linux. eth0 para windows
+    myServo = new ServoMinas("enp2s0", engParameters); // enp2s0 para linux. eth0 para windows
     myServo->moveToThread(myServoThread);
     // seção das conexões
     // Selecionar sensor
@@ -77,20 +78,6 @@ MainWindow::MainWindow(QWidget *parent)
         // filtrar conteúdo do log do servo
         connect(ui->filter_servo_log, &QLineEdit::textChanged, this, &MainWindow::filterServoLog);
     }
-
-    // connect(myDial, &QDial::sliderReleased, this, [this]() {
-    //     double min = sensorData.start_angle ;
-    //     double max = sensorData.arrive_angle ;
-    //     double value = myDial->value();
-    //     qDebug() << "valor atual é:" << value;
-    //     if(value < min)
-    //         myDial->setValue(min);
-    //     else if( value> max)
-    //         myDial->setValue(max);
-
-    // });
-
-
     // servo communication setup
     ui->disable_servo_button->setEnabled(false);
     // Connect checkbox toggle to the MainWindow signal
@@ -1005,3 +992,47 @@ void MainWindow::toggleTreeEditability(bool checked) {
 }
 
 
+// inicializar comunicação com o micronas
+void MainWindow::on_micronas_connect_released()
+{
+    myMicronas = new SerialMicronas(this);
+    connect(myMicronas,&SerialMicronas::errorOccurred,this,&MainWindow::errorFromMicronas);
+    if (!myMicronas->openPort("/dev/ttyUSB0")) {
+        qCritical() << "Micronas: Falha ao abrir a porta serial.";
+        return;
+    }
+    uint8_t baseAddress = 0x01; // Exemplo de endereço base
+    if (!myMicronas->setBaseAddress(baseAddress)) {
+        qCritical() << "Micronas: Erro ao configurar o endereço base.";
+        return;
+    }
+
+    //teste -> apagar
+    qDebug() << "Micronas: Endereço base definido com sucesso!";
+    uint8_t registerAddress = 0x0B;
+    QByteArray readData = myMicronas->readRegister(registerAddress);
+    if (!readData.isEmpty()) {
+        qDebug() << "Micronas: Valor lido do registro" << registerAddress << ":" << readData.toHex();
+    } else {
+        qCritical() << "Micronas: Falha ao ler o registro.";
+    }
+
+
+    // // teste de escrita de valor
+    // uint16_t writeValue = 0x1234;
+    // if (micronas.writeRegister(registerAddress, writeValue)) {
+    //     qDebug() << "Micronas: Valor" << QString::number(writeValue, 16).toUpper()
+    //     << "escrito no registro" << registerAddress << "com sucesso!";
+    // } else {
+    //     qCritical() << "Micronas: Erro ao escrever no registro.";
+    // }
+
+    // // Fechar a porta serial ao final
+    // micronas.closePort();
+    // qDebug() << "Micronas: Conexão encerrada.";
+
+}
+void MainWindow::errorFromMicronas(const QString &errorMessage)
+{
+    qCritical() << "Micronas error: " + errorMessage;
+}

@@ -10,6 +10,7 @@
 #include <QException>
 #include "ethercat_manager.h"
 #include "minas_client.h"
+#include "datatypes.h"
 #include "worker.h"
 
 
@@ -18,7 +19,7 @@ class ServoMinas : public QObject
     Q_OBJECT
 
 public:
-    ServoMinas(QString interface);
+    ServoMinas(QString interface,EngParameters *engParameters);
     ~ServoMinas();
 
     bool initialize(); // Inicializa o cliente EtherCAT
@@ -67,6 +68,8 @@ private:
     bool isCommunicationEnabled;
     void configureSafetyLimits(); // Configura os limites de segurança do servo
 
+    // trazer os parâmetros da engenharia
+    EngParameters * engParameters;
 
 };
 

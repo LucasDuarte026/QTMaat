@@ -1,13 +1,15 @@
-#include "worker.h"
 #include <iostream>
 #include <QDebug>
 #include <QException>
+#include "worker.h"
+#include "datatypes.h"
 
 #define NSEC_PER_SECOND 1e+9
 
-Worker::Worker(minas_control::MinasClient *_client, QObject* parent)
+Worker::Worker(minas_control::MinasClient *_client,EngParameters*_engParameters, QObject* parent)
     : QObject(parent)
     , client(_client)
+    , engParameters(_engParameters)
 {
 
     // Set up real-time clock parameters
@@ -27,22 +29,22 @@ void Worker::threadMoveToHome() {
     minas_control::MinasOutput output;
     minas_control::MinasInput input;
     if (client) {
-        client->setSwitchSpeed(8000000);
-        client->setZeroSpeed(8000000);
-        client->setHomingAcceleration(33554432);
-        client->setHomingTorqueLimit(500);
-        client->setHomingDetectionTime(2048);
-        client->setHomingDetectionVelocity(33554432);
-        client->setCommunicationFuntionExtendedSetup(40);
-        client->setHomingReturnSpeedLimit(20000);
-        client->setHomingMode(34);  // (On Index Pulse +Ve direction)
-        client->setTouchProbe(7);
+        client->setSwitchSpeed(engParameters->homing.switchSpeed);
+        client->setZeroSpeed(engParameters->homing.zeroSpeed);
+        client->setHomingAcceleration(engParameters->homing.homingAcceleration);
+        client->setHomingTorqueLimit(engParameters->homing.homingTorqueLimit);
+        client->setHomingDetectionTime(engParameters->homing.homingDetectionTime);
+        client->setHomingDetectionVelocity(engParameters->homing.homingDetectionVelocity);
+        client->setCommunicationFuntionExtendedSetup(engParameters->homing.communicationFunctionExtendedSetup);
+        client->setHomingReturnSpeedLimit(engParameters->homing.homingReturnSpeedLimit);
+        client->setHomingMode(engParameters->homing.homingMode);  // (On Index Pulse +Ve direction)
+        client->setTouchProbe(engParameters->homing.touchprobeFunction);
 
         threadEnableServo(0x06);
         memset(&output, 0x00, sizeof(minas_control::MinasOutput));
-        output.max_motor_speed = 500;
-        output.target_torque = 500;
-        output.max_torque = 500;
+        output.max_motor_speed = engParameters->homing.max_motor_speed;
+        output.target_torque = engParameters->homing.target_torque;
+        output.max_torque = engParameters->homing.max_torque;
         output.controlword = 0x001F;
         output.operation_mode = 0x06; // definide de fato o modo de operação para a escrita
 
@@ -230,8 +232,8 @@ void Worker::threadMoveOffset(double amount, double velocity, double step) {
         memset(&output, 0x00, sizeof(minas_control::MinasOutput));
         output.target_position = static_cast<int32_t>(input.position_actual_value) + offset_units;
         output.max_motor_speed = static_cast<int32_t>(velocity);
-        output.target_torque = 500;
-        output.max_torque = 500;
+        output.target_torque = engParameters->positioning.targetTorque;
+        output.max_torque = engParameters->positioning.maxTorque;
         output.controlword = 0x001F;
         output.operation_mode = 0x01;
 
