@@ -1,10 +1,13 @@
 #include "serialmicronas.h"
 #include <QDebug>
 
+#define PROGSPEED 1000
+#define HALFPROGSPEED (PROGSPEED / 2)
+#define THRESHOLD (HALFPROGSPEED * 1.2)
+
 SerialMicronas::SerialMicronas(QObject *parent) : QObject(parent)
 {
     serial = new QSerialPort(this);
-    connect(serial, &QSerialPort::readyRead, this, &SerialMicronas::handleReadyRead);
 }
 
 SerialMicronas::~SerialMicronas()
@@ -41,138 +44,156 @@ void SerialMicronas::closePort()
     }
 }
 
-bool SerialMicronas::sendCommand(const QByteArray &command)
+bool SerialMicronas::calculateParityBit()
 {
-    if (!serial->isOpen()) {
-        emit errorOccurred("Erro: Porta serial não está aberta.");
-        return false;
+    uint8_t ones = 0;
+    for (int i = 0; i < 8; i++) {
+        if (buffer[i] == 1) { ones++; }
+    }
+    return 1 - (ones % 2);
+}
+
+void SerialMicronas::sendCommand(int length)
+{
+    if (!serial->isOpen()) return;
+
+    sendSync();
+
+    for (int i = 0; i < length; i++) {
+        if (buffer[i] == 1) writeLogicalOne();
+        else writeLogicalZero();
     }
 
-    QByteArray formattedCommand = command + "\r";  // Adiciona <CR> (0x0D) ao final
-    serial->write(formattedCommand);
-
-    qDebug() << "Comando enviado:" << formattedCommand;
-    return true;
+    outputState = 1;
 }
 
-QByteArray SerialMicronas::readResponse()
+void SerialMicronas::sendSync()
 {
-    if (!serial->isOpen()) {
-        emit errorOccurred("Erro: Porta serial não está aberta.");
-        return QByteArray();
-    }
-
-    if (serial->waitForReadyRead(100)) {
-        return serial->readAll().trimmed();
-    }
-    return QByteArray();
+    serial->write("H");
+    serial->waitForBytesWritten(2);
+    serial->write("L");
+    serial->waitForBytesWritten(2);
+    serial->write("H");
+    serial->waitForBytesWritten(4);
+    serial->write("L");
+    serial->waitForBytesWritten(PROGSPEED);
 }
 
-bool SerialMicronas::setBaseAddress(uint8_t baseAddress)
+void SerialMicronas::writeLogicalOne()
 {
-    QByteArray command;
-    command.append("xxsb");
-    command.append(QString("%1").arg(baseAddress, 2, 16, QChar('0')).toUpper().toUtf8());
-    command.append("0000");
-    command.append(QString::number(calculateCRC(baseAddress, 4), 16).toUpper().toUtf8());
-
-    sendCommand(command);
-    QByteArray response = readResponse();
-    return !response.isEmpty() && response.contains("0:000000");
+    serial->write("1");
+    serial->waitForBytesWritten(HALFPROGSPEED);
+    serial->write("0");
+    serial->waitForBytesWritten(HALFPROGSPEED);
 }
 
-QByteArray SerialMicronas::readRegister(uint8_t address)
+void SerialMicronas::writeLogicalZero()
 {
-    QByteArray command;
-    command.append("xxr");
-    command.append(QString("%1").arg(address, 2, 16, QChar('0')).toUpper().toUtf8());
-
-    sendCommand(command);
-    QByteArray response = readResponse();
-
-    if (!response.isEmpty() && response.startsWith("0:")) {
-        return response.mid(2, response.size() - 2); // Remove código de status
-    }
-
-    emit errorOccurred("Erro ao ler o registro.");
-    return QByteArray();
+    serial->write("1");
+    serial->waitForBytesWritten(PROGSPEED);
 }
 
-bool SerialMicronas::writeRegister(uint8_t address, uint16_t data)
+uint8_t SerialMicronas::getError() { return errorCode; }
+
+uint8_t SerialMicronas::readResponse()
 {
-    QByteArray command;
-    command.append("xxw");
-    command.append(QString("%1").arg(address, 2, 16, QChar('0')).toUpper().toUtf8());
-    command.append(QString("%1").arg(data, 4, 16, QChar('0')).toUpper().toUtf8());
-    command.append(QString::number(calculateCRC((address << 16) | data, 20), 16).toUpper().toUtf8());
+    if (!serial->isOpen()) return 1;
 
-    sendCommand(command);
-    QByteArray response = readResponse();
+    serial->waitForReadyRead(10);
+    QByteArray responseData = serial->readAll();
 
-    return !response.isEmpty() && response.contains("0:000000");
+    if (responseData.isEmpty()) return 1;
+
+    response = responseData.toUInt();
+
+    uint8_t responseCRC = calculateCRC(response, 16);
+    if (responseCRC != responseData.at(responseData.size() - 1)) return 2;
+
+    return 0;
 }
 
-uint8_t SerialMicronas::calculateParity(uint8_t command, uint8_t address)
+uint8_t SerialMicronas::calculateCRC(uint32_t data, uint8_t length)
 {
-    uint8_t parity = command ^ address;
-    parity = parity ^ (parity >> 4) ^ (parity >> 2) ^ (parity >> 1);
-    return parity & 1;
-}
-
-uint8_t SerialMicronas::calculateCRC(uint32_t data, uint8_t size)
-{
-    const uint8_t CRC_POLY = 0x13; // x^4 + x + 1
+    const uint8_t CRC_POLY = 0x13;
     uint8_t crc = 0x00;
 
-    for (int i = 0; i < size; i++) {
-        if (((crc << 3) & 0x1) != ((data >> (size - 1 - i)) & 1)) {
-            crc = (crc << 1) ^ CRC_POLY;
-            crc &= 0xF;
-        } else {
-            crc <<= 1;
-        }
+    for (int i = length; i > -1; i--) {
+        uint8_t bit_in = (data >> i) & 0x1;
+        uint8_t bit_out = (crc >> 3) & 0x1;
+        uint8_t bit_comp = (bit_out ^ bit_in) & 0x1;
+        crc = (crc << 1) + bit_comp;
+        crc = crc ^ (bit_comp << 1);
     }
+
     return crc & 0xF;
 }
 
-void SerialMicronas::handleReadyRead()
+bool SerialMicronas::setBaseAddress(uint16_t base)
 {
-    QByteArray response = serial->readAll().trimmed();
-    processResponse(response);
+    buffer[0] = 0;
+    buffer[1] = 1;
+    buffer[2] = 1;
+
+    for (int i = 3; i <= 8; i++) {
+        buffer[i] = 0;
+    }
+
+    buffer[8] = calculateParityBit();
+    buffer[9] = 0;
+
+    for (int i = 0; i < 16; i++) {
+        buffer[25 - i] = (base >> i) & 0x1;
+    }
+
+    sendCommand(30);
+    return waitForACK();
 }
 
-void SerialMicronas::processResponse(const QByteArray &response)
+uint16_t SerialMicronas::readAddress(uint8_t address)
 {
-    qDebug() << "Resposta recebida:" << response;
+    buffer[0] = 0;
+    buffer[1] = 0;
+    buffer[2] = 1;
 
-    if (response.contains(":")) {
-        QStringList parts;
-        for (const QByteArray &part : response.split(':')) {
-            parts.append(QString::fromUtf8(part));
-        }
-        if (parts.size() > 1) {
-            int errorCode = parts[0].toInt();
-            QString resultData = parts[1];
-
-            if (errorCode != 0) {
-                emit errorOccurred("Erro na resposta: " + interpretErrorCode(errorCode));
-            } else {
-                emit responseReceived(resultData);
-            }
-        }
+    for (int i = 0; i < 5; i++) {
+        buffer[7 - i] = (address >> i) & 0x1;
     }
+
+    buffer[8] = calculateParityBit();
+
+    sendCommand(9);
+    errorCode = readResponse();
+
+    return response;
 }
 
-QString SerialMicronas::interpretErrorCode(int errorCode)
+bool SerialMicronas::writeAddress(uint8_t address, uint16_t data)
 {
-    switch (errorCode) {
-    case 0: return "Sem erro";
-    case 1: return "Erro de reconhecimento";
-    case 2: return "Segundo erro de reconhecimento";
-    case 3: return "Comando inválido para o modo selecionado";
-    case 13: return "Erro de leitura de dados";
-    case 14: return "Parâmetro de comando inválido";
-    case 15: return "Comando inválido";
-    default: return "Erro desconhecido (" + QString::number(errorCode) + ")";
+    buffer[0] = 1;
+    buffer[1] = 1;
+    buffer[2] = 0;
+
+    for (int i = 0; i < 5; i++) {
+        buffer[7 - i] = (address >> i) & 0x1;
     }
+
+    buffer[8] = calculateParityBit();
+    buffer[9] = 0;
+
+    for (int i = 0; i < 16; i++) {
+        buffer[25 - i] = (data >> i) & 0x1;
+    }
+
+    sendCommand(30);
+    return waitForACK();
+}
+
+bool SerialMicronas::waitForACK()
+{
+    if (!serial->isOpen()) return false;
+
+    serial->waitForReadyRead(10);
+    QByteArray ack = serial->readAll();
+
+    return !ack.isEmpty();
 }

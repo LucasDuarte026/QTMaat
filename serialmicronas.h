@@ -15,27 +15,33 @@ public:
 
     bool openPort(const QString &portName);
     void closePort();
-    bool sendCommand(const QByteArray &command);
-    QByteArray readResponse();
 
-    bool setBaseAddress(uint8_t baseAddress);
-    QByteArray readRegister(uint8_t address);
-    bool writeRegister(uint8_t address, uint16_t data);
+    uint16_t readAddress(uint8_t address);
+    bool writeAddress(uint8_t address, uint16_t data);
+    bool setBaseAddress(uint16_t base);
+    uint8_t getError();
 
 private:
     QSerialPort *serial;
-    uint8_t calculateParity(uint8_t command, uint8_t address);
-    uint8_t calculateCRC(uint32_t data, uint8_t size);
+    bool calculateParityBit();
+    void sendCommand(int length);
+    void sendSync();
+    void writeLogicalZero();
+    void writeLogicalOne();
 
-    void processResponse(const QByteArray &response);
-    QString interpretErrorCode(int errorCode);
+    uint8_t readResponse();
+    uint8_t calculateCRC(uint32_t data, uint8_t length);
+    uint8_t readBit();
+    bool waitForACK();
+
+    uint8_t buffer[30];
+    bool outputState;
+    uint8_t errorCode;
+    uint16_t response;
 
 signals:
     void responseReceived(const QString &response);
     void errorOccurred(const QString &errorMessage);
-
-private slots:
-    void handleReadyRead();
 };
 
 #endif // SERIALMICRONAS_H

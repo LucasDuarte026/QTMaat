@@ -1,8 +1,9 @@
 #!/bin/bash
-
 EXECUTABLE="QTMaat"
 
-echo "Applying network permissions to $EXECUTABLE..."
-sudo setcap cap_net_raw,cap_net_admin=eip "$EXECUTABLE"
+echo "Applying permissions to $EXECUTABLE..."
 
-echo "Done! Run your app with: ./build/QTMaat"
+# Permissões para acesso a redes e dispositivos USB
+sudo setcap cap_net_raw,cap_net_admin,cap_dac_override,cap_sys_rawio=eip "$EXECUTABLE"
+
+echo "Done! Now run your app without sudo"

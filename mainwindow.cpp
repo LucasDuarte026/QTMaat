@@ -996,26 +996,43 @@ void MainWindow::toggleTreeEditability(bool checked) {
 void MainWindow::on_micronas_connect_released()
 {
     myMicronas = new SerialMicronas(this);
-    connect(myMicronas,&SerialMicronas::errorOccurred,this,&MainWindow::errorFromMicronas);
+    // connect(myMicronas,&SerialMicronas::errorOccurred,this,&MainWindow::errorFromMicronas);
+
+
     if (!myMicronas->openPort("/dev/ttyUSB0")) {
-        qCritical() << "Micronas: Falha ao abrir a porta serial.";
-        return;
-    }
-    uint8_t baseAddress = 0x01; // Exemplo de endereço base
-    if (!myMicronas->setBaseAddress(baseAddress)) {
-        qCritical() << "Micronas: Erro ao configurar o endereço base.";
+        qCritical() << "Falha ao abrir a porta serial.";
         return;
     }
 
-    //teste -> apagar
-    qDebug() << "Micronas: Endereço base definido com sucesso!";
-    uint8_t registerAddress = 0x0B;
-    QByteArray readData = myMicronas->readRegister(registerAddress);
-    if (!readData.isEmpty()) {
-        qDebug() << "Micronas: Valor lido do registro" << registerAddress << ":" << readData.toHex();
-    } else {
-        qCritical() << "Micronas: Falha ao ler o registro.";
+    uint8_t baseAddress = 0x01;
+    if (!myMicronas->setBaseAddress(baseAddress)) {
+        qCritical() << "Erro ao configurar a base de endereços.";
+        myMicronas->closePort();
+        return;
     }
+    qDebug() << "Base de endereços definida com sucesso!";
+
+
+    uint8_t registerAddress = 0x0B;
+    uint16_t readData = myMicronas->readAddress(registerAddress);
+
+    // Verificar se a leitura foi bem-sucedida
+    if (myMicronas->getError() == 0) {
+        qDebug() << "Valor lido do registrador" << QString::number(registerAddress, 16).toUpper()
+        << ": 0x" << QString::number(readData, 16).toUpper();
+    } else {
+        qCritical() << "Erro ao ler o registrador. Código de erro:" << myMicronas->getError();
+    }
+
+    // //teste -> apagar
+    // qDebug() << "Micronas: Endereço base definido com sucesso!";
+    // uint8_t registerAddress = 0x0B;
+    // QByteArray readData = myMicronas->readRegister(registerAddress);
+    // if (!readData.isEmpty()) {
+    //     qDebug() << "Micronas: Valor lido do registro" << registerAddress << ":" << readData.toHex();
+    // } else {
+    //     qCritical() << "Micronas: Falha ao ler o registro.";
+    // }
 
 
     // // teste de escrita de valor
