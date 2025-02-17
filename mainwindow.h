@@ -130,6 +130,7 @@ private slots:
     // Comunicação micronas
     void on_micronas_connect_released();
     void errorFromMicronas(const QString &errorMessage);
+    void messageFromMicronas(const QString &message);
 
 private:
     // ponteiros para as estruturas a baixo da janela principal

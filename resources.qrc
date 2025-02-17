@@ -6,5 +6,7 @@
         <file>resources/green_circle.png</file>
         <file>resources/red_cross.png</file>
         <file>resources/main_circle.png</file>
+        <file>resources/HAL_USB_Programmer.png</file>
     </qresource>
+    <qresource prefix="/new/prefix1"/>
 </RCC>

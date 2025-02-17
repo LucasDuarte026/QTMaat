@@ -20,8 +20,11 @@ public:
 
     uint8_t getError();
     QString getFirmwareVersion();
+    bool setBaseAddress(uint8_t address);
 
 private:
+    QString processResponse(const QByteArray &response);
+
     QSerialPort *serial;
 
     uint8_t buffer[30];
@@ -30,8 +33,9 @@ private:
     uint16_t response;
 
 signals:
-    void responseReceived(const QString &response);
     void errorOccurred(const QString &errorMessage);
+    void messageMicronas_signal(const QString &errorMessage);
+
 };
 
 #endif // SERIALMICRONAS_H

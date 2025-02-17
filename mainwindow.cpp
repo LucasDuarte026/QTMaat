@@ -997,6 +997,7 @@ void MainWindow::on_micronas_connect_released()
 {
     myMicronas = new SerialMicronas(this);
     connect(myMicronas,&SerialMicronas::errorOccurred,this,&MainWindow::errorFromMicronas);
+    connect(myMicronas,&SerialMicronas::messageMicronas_signal,this,&MainWindow::messageFromMicronas);
 
     QString portName = ui->micronasUSBPort_lineEdit->text().trimmed();
 
@@ -1028,19 +1029,29 @@ void MainWindow::on_micronas_connect_released()
         qCritical() << "Falha ao abrir ao configurar modo de placa.";
         myMicronas->closePort();
         return;
+    }
 
-}
-
+    // uint8_t registerAddress = 0x01;
+    // uint16_t readData = myMicronas->setBaseAddress(registerAddress);
+    // qDebug() << "registador "<<registerAddress<<" tem tal informacção"<<readData;
 
     // uint8_t registerAddress = 0x22;
     // uint16_t readData = myMicronas->readAddress(registerAddress);
     // qDebug() << "registador "<<registerAddress<<" tem tal informacção"<<readData;
-
-
-
-
 }
+
+
+
+
+
+
+
 void MainWindow::errorFromMicronas(const QString &errorMessage)
 {
     qCritical() << "Micronas error: " + errorMessage;
 }
+void MainWindow::messageFromMicronas(const QString &message)
+{
+    qDebug() << "Micronas: " + message;
+}
+
