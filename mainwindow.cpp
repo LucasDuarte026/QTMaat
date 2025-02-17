@@ -996,57 +996,48 @@ void MainWindow::toggleTreeEditability(bool checked) {
 void MainWindow::on_micronas_connect_released()
 {
     myMicronas = new SerialMicronas(this);
-    // connect(myMicronas,&SerialMicronas::errorOccurred,this,&MainWindow::errorFromMicronas);
+    connect(myMicronas,&SerialMicronas::errorOccurred,this,&MainWindow::errorFromMicronas);
 
+    QString portName = ui->micronasUSBPort_lineEdit->text().trimmed();
 
-    if (!myMicronas->openPort("/dev/ttyUSB0")) {
-        qCritical() << "Falha ao abrir a porta serial.";
-        return;
+    // Verificar se o campo foi preenchido
+    if (!portName.isEmpty()) {
+        // Expressão regular para validar "ttyUSBX" (onde X é um número)
+        QRegularExpression regex("^ttyUSB\\d+$");
+
+        if (!regex.match(portName).hasMatch()) {
+            qCritical() << "Erro: O nome da porta deve estar no formato 'ttyUSBX', onde X é um número.";
+            return;
+        }
+    } else {
+        // Se o campo estiver vazio, usa "ttyUSB0" como padrão
+        portName = "ttyUSB0";
     }
-
-    uint8_t baseAddress = 0x01;
-    if (!myMicronas->setBaseAddress(baseAddress)) {
-        qCritical() << "Erro ao configurar a base de endereços.";
+    if (!myMicronas->openPort("/dev/" + portName)) {
+        qCritical() << "Falha ao abrir a porta serial.";
         myMicronas->closePort();
         return;
     }
-    qDebug() << "Base de endereços definida com sucesso!";
+
+    // versão do firmware
+    QString firmwareVersion = myMicronas->getFirmwareVersion();
+    qDebug() << "Versão do firmware é: "<< firmwareVersion;
+
+    // configurar a base:
+    if(!myMicronas->setBoardMode('C')){
+        qCritical() << "Falha ao abrir ao configurar modo de placa.";
+        myMicronas->closePort();
+        return;
+
+}
 
 
-    uint8_t registerAddress = 0x0B;
-    uint16_t readData = myMicronas->readAddress(registerAddress);
-
-    // Verificar se a leitura foi bem-sucedida
-    if (myMicronas->getError() == 0) {
-        qDebug() << "Valor lido do registrador" << QString::number(registerAddress, 16).toUpper()
-        << ": 0x" << QString::number(readData, 16).toUpper();
-    } else {
-        qCritical() << "Erro ao ler o registrador. Código de erro:" << myMicronas->getError();
-    }
-
-    // //teste -> apagar
-    // qDebug() << "Micronas: Endereço base definido com sucesso!";
-    // uint8_t registerAddress = 0x0B;
-    // QByteArray readData = myMicronas->readRegister(registerAddress);
-    // if (!readData.isEmpty()) {
-    //     qDebug() << "Micronas: Valor lido do registro" << registerAddress << ":" << readData.toHex();
-    // } else {
-    //     qCritical() << "Micronas: Falha ao ler o registro.";
-    // }
+    // uint8_t registerAddress = 0x22;
+    // uint16_t readData = myMicronas->readAddress(registerAddress);
+    // qDebug() << "registador "<<registerAddress<<" tem tal informacção"<<readData;
 
 
-    // // teste de escrita de valor
-    // uint16_t writeValue = 0x1234;
-    // if (micronas.writeRegister(registerAddress, writeValue)) {
-    //     qDebug() << "Micronas: Valor" << QString::number(writeValue, 16).toUpper()
-    //     << "escrito no registro" << registerAddress << "com sucesso!";
-    // } else {
-    //     qCritical() << "Micronas: Erro ao escrever no registro.";
-    // }
 
-    // // Fechar a porta serial ao final
-    // micronas.closePort();
-    // qDebug() << "Micronas: Conexão encerrada.";
 
 }
 void MainWindow::errorFromMicronas(const QString &errorMessage)
