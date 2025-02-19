@@ -17,13 +17,12 @@ ServoMinas::ServoMinas(QString interface, EngParameters *_engParameters)
     ,   engParameters(_engParameters)
 
 {
-
-    // Set up real-time clock parameters
-    period = 4e+6; // 4ms period in nanoseconds
+    // configurar paramentros do tempo 
+    period = 4e+6; // 4ms em nanossegundos
     clock_gettime(CLOCK_REALTIME, &tick);
-
 }
 
+// destruto
 ServoMinas::~ServoMinas() {
     if (client) {
         client->servoOff();
@@ -34,13 +33,16 @@ ServoMinas::~ServoMinas() {
     }
 }
 
+//  enviar log
 void ServoMinas::newLogReceived(QString message){
     emit logMessage("-> Worker:" +message);
 }
 
+// inicializa o manager, o cliente e a comunicação com o servo
 bool ServoMinas::initialize() {
     QString message;
     try {
+        // inicializa o manager
         manager = new ethercat::EtherCatManager(interfaceName.toStdString());
         qDebug() << "Inicializando o gerenciador EtherCAT...";
 
@@ -52,7 +54,7 @@ bool ServoMinas::initialize() {
             client = nullptr;
             return false; // Importante: Sair cedo se nenhum cliente for encontrado
         }
-
+        //  inicializa o cliente
         client = new minas_control::MinasClient(*manager, 1);
         resetErrors();
         configureSafetyLimits();
@@ -77,15 +79,18 @@ bool ServoMinas::initialize() {
     }
 }
 
+// habilita o servo no modo especificado
 void ServoMinas::enableServo(int mode) {
     QString message;
     if (client) {
         try{
+            // habilita o servo
             client->servoOn(mode);
+            // configura as acelerações e velocidade do perfil
             client->setProfileVelocity(engParameters->safetyLimits.speed);
             client->setProfileAcceleration(engParameters->safetyLimits.acceleration);
             client->setProfileDeceleration(engParameters->safetyLimits.deceleration);
-
+            // definir o modo de operação
             QString name_mode;
             if (mode == 0x01) {
                 name_mode = "Posição absoluta";
@@ -113,6 +118,7 @@ void ServoMinas::enableServo(int mode) {
     qDebug() << message;
 }
 
+// desabilita o servo
 void ServoMinas::disableServo() {
     QString message;
     if (client) {
@@ -130,6 +136,7 @@ void ServoMinas::disableServo() {
 
 }
 
+// reseta os erros
 void ServoMinas::resetErrors() {
     QString message;
     if (client) {
@@ -144,6 +151,7 @@ void ServoMinas::resetErrors() {
     qDebug() << message;
 }
 
+// configura os limites de segurança
 void ServoMinas::configureSafetyLimits() {
     QString message;
     if (client) {
@@ -160,6 +168,12 @@ void ServoMinas::configureSafetyLimits() {
 
 }
 
+/*  conexões de controle da worker:
+    - O que ela inicia
+    - a espera de terminar e se auto deletar
+    - responsividade pelos sinais
+*/
+// envia o servo para a home com a procura do sinal vindo do próprio motor
 void ServoMinas::moveToHome() {
 
     if (!client) {
@@ -170,20 +184,13 @@ void ServoMinas::moveToHome() {
         emit logMessage("Operação Homing abortada: Comunicação não habilitada");
         return;
     }
-    // if (workerThread) {
-    //     emit logMessage("Já existe uma operação em andamento.");
-    //     return;
-    // }
+
     workerThread = new QThread();
     if(client)
         worker = new Worker(client,engParameters);
 
     worker->moveToThread(workerThread);
-    /*  conexões de controle da worker:
-        - O que ela inicia
-        - a espera de terminar e se auto deletar
-        - responsividade pelos sinais
-    */
+ 
     connect(workerThread, &QThread::started, worker, &Worker::threadMoveToHome);
     connect(worker, &Worker::finished, workerThread, &QThread::quit);
     connect(worker, &Worker::finished, worker, &Worker::deleteLater);
@@ -208,6 +215,7 @@ void ServoMinas::moveToHome() {
 
 }
 
+// envia o servo para uma posição absoluta
 void ServoMinas::moveAbsoluteTo(double position, double velocity ) {
 
     if (!client) {
@@ -218,10 +226,6 @@ void ServoMinas::moveAbsoluteTo(double position, double velocity ) {
         emit logMessage("Operação de giro abortada: Comunicação não habilitada");
         return;
     }
-    // if (workerThread) {
-    //     emit logMessage("Já existe uma operação em andamento.");
-    //     return;
-    // }
     workerThread = new QThread();
     if(client)
         worker = new Worker(client,engParameters);
@@ -251,6 +255,7 @@ void ServoMinas::moveAbsoluteTo(double position, double velocity ) {
     emit operationStatusSignal(true); // iniciou a operação
 }
 
+// envia o servo para uma posição relativa
 void ServoMinas::moveOffset(double amount, double velocity,double step) {
 
     if (!client) {
@@ -261,10 +266,6 @@ void ServoMinas::moveOffset(double amount, double velocity,double step) {
         emit logMessage("Operação de giro abortada: Comunicação não habilitada");
         return;
     }
-    // if (workerThread) {
-    //     emit logMessage("Já existe uma operação em andamento.");
-    //     return;
-    // }
     workerThread = new QThread();
     if(client)
         worker = new Worker(client,engParameters);
@@ -294,6 +295,7 @@ void ServoMinas::moveOffset(double amount, double velocity,double step) {
     emit operationStatusSignal(true); // iniciou a operação
 }
 
+// dar update no estado de comunicação
 void ServoMinas::updateCommunicationState(bool checked) {
     isCommunicationEnabled = checked;
     if (isCommunicationEnabled) {
@@ -308,7 +310,7 @@ void ServoMinas::updateCommunicationState(bool checked) {
 
 // ---- ---- ---- ---- ---- Setters and Getters ---- ---- ---- ---- ----
 
-
+//  ler entradas do servo para uso geral
 minas_control::MinasInput ServoMinas::readInput(){
     QString message;
     minas_control::MinasInput input;
@@ -327,6 +329,7 @@ minas_control::MinasInput ServoMinas::readInput(){
 
 }
 
+// ler saidas para controle do que o servo recebeu
 minas_control::MinasOutput ServoMinas::readOutput(){
     QString message;
     minas_control::MinasOutput output;
@@ -344,6 +347,5 @@ minas_control::MinasOutput ServoMinas::readOutput(){
     }
 }
 
-void ServoMinas::setActualPosition(uint32_t value){    this->actual_position = value;     }
-
+// obter a posição atual do servo
 uint32_t ServoMinas::getActualPosition()          {    return this->actual_position;      }

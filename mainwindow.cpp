@@ -1,16 +1,17 @@
 #include "mainwindow.h"
 #include "./ui_mainwindow.h"
 
+// Janela principal que gerencia todo o código
 MainWindow::MainWindow(QWidget *parent)
-    : QMainWindow(parent)
-    , ui(new Ui::MainWindow)
+    : QMainWindow(parent)   // Inicializa o parent
+    , ui(new Ui::MainWindow) // Inicializa o ponteiro para a interface
     , sensorWindow(nullptr)  // Inicializa o ponteiro como nullptr
-    , sensorData{"Modelo não selecionado",0.0,360.0,"CW"}
-    , actual_servo_value(0.0)
+    , sensorData{"Modelo não selecionado",0.0,360.0,"CW"}   // Inicializa o objeto sensorData
+    , actual_servo_value(0x00) // Inicializa a variável com o valor inicial do servo
     , myServo(nullptr)        // ponteiro para a classe que controla o servo
     , logServoWindow(nullptr) // ponteiro para a janela de log dentro da mainWindow
     , servoUP(false)          // bool que comunica o estado do servo (se está apto a ser usado)
-    , myUser{"Comum","Produção"}
+    , myUser{"Comum","Produção"} // Inicializa o objeto myUser com o nome e permissão do usuário
 {
 
     ui->setupUi(this); // configurar e iniciar os elementos definidos em UI
@@ -18,67 +19,73 @@ MainWindow::MainWindow(QWidget *parent)
 
 
     // Configuração da barra de menu para Linux
-    ui->menubar->setNativeMenuBar(false);
+    ui->menubar->setNativeMenuBar(false);       
 
     // Criação da classe que cuida dos usuários
-    usersHandler = new UsersHandler(this);
+    usersHandler = new UsersHandler(this); // Criação da classe que cuida dos usuários
 
+    // Configurando o dial
     myDial = ui->dial_elements->findChild<QDial*>("plan_dial"); // usando o dial criado no UI
-    myInsertAbsolute = ui->absoluteRevolution;
+    myInsertAbsolute = ui->absoluteRevolution;  
     myAnimate_progress_bar = ui->animate_progress_bar;
     myAnimate_progress_bar->setMinimum(this->sensorData.start_angle);
     myAnimate_progress_bar->setMaximum(this->sensorData.arrive_angle);
     myAnimate_progress_bar->setValue(0);
-
+    
     if(myDial){
-        configDial(myDial);
+        configDial(myDial); // Configurando o dial
     }
 
     //  Engenharia tab
-    EngParameters *engParameters = new EngParameters;
-    configTag_engenharia();
+    EngParameters *engParameters = new EngParameters; // Criação da classe que cuida das engenharias
+    configTag_engenharia();                             // Configurando a tab de engenharia
 
-    // tab de comunucação com o micronas
-    myMicronas = new SerialMicronas(this);
+    // tab de comunuicação com o micronas
+    myMicronas = new SerialMicronas(this); // Criação da classe que cuida da comunuicação com o micronas
 
+    // Criação das classes que cuidam dos logs
     logHandler = new LogHandler(ui->general_log_screen, this);
     logServoWindow = new LogServoWindow(ui->servo_log_screen, ui->filter_servo_log,
                                         ui->clean_log_button, this);
-    //  ServoMinas deploy
+    
+    //  Thread que controla o servo e sua comunicação principal e lança as operações
     myServoThread = new QThread(this); // inicializa uma thread
     myServo = new ServoMinas("enp2s0", engParameters); // enp2s0 para linux. eth0 para windows
-    myServo->moveToThread(myServoThread);
-    // seção das conexões
-    // Selecionar sensor
+    myServo->moveToThread(myServoThread); // move a classe que controla o servo para a thread
+    
+
+    // botão "Selecionar sensor"
     connect(ui->sensorSelected, &QPushButton::clicked, this, &MainWindow::by_sensorSelected_action);
-    // Animar Dial com simulação de operação
+    // botão "Animar Dial" com simulação de operação
     connect(ui->animate_dial_button, &QPushButton::clicked, this, &MainWindow::by_animate_dial_button_action);
 
 
-    // Valor aboluto em ângulo desejado
+    // lineEdit que recebe o Valor aboluto em ângulo desejado
     connect(myInsertAbsolute, &QLineEdit::returnPressed, this, &MainWindow::insertedAngleToAchieve);
     connect(ui->readServoPosition_button,&QPushButton::clicked, this, &MainWindow::readInputsUpdate);
-    {// botões de limpeza e de filtro da aba de logs gerais
+    // botões de limpeza e de filtro da aba de logs gerais
 
-        originalGeneralLogContent = ui->general_log_screen->toPlainText();
-        originalServoLogContent = ui->servo_log_screen->toPlainText();
+    originalGeneralLogContent = ui->general_log_screen->toPlainText();
+    originalServoLogContent = ui->servo_log_screen->toPlainText();
 
-        connect(ui->general_log_screen, &QTextEdit::textChanged, this, &MainWindow::updateGeneralLogContent);
-        connect(ui->servo_log_screen, &QTextEdit::textChanged, this, &MainWindow::updateServoLogContent);
+    // Conectar o texto da tela de log geral com a função que atualiza o conteúdo original
+    connect(ui->general_log_screen, &QTextEdit::textChanged, this, &MainWindow::updateGeneralLogContent);
+    // Conectar o texto da tela de log do servo com a função que atualiza o conteúdo original
+    connect(ui->servo_log_screen, &QTextEdit::textChanged, this, &MainWindow::updateServoLogContent);
 
-        ui->filter_general_log->setPlaceholderText("Buscar no log geral...");
-        // Conectar botão de limpar para apagar todo o log geral
-        connect(ui->clean_all_output, &QPushButton::clicked, ui->general_log_screen, &QTextEdit::clear);
-        // filtrar conteúdo do log geral
-        connect(ui->filter_general_log, &QLineEdit::textChanged, this, &MainWindow::filterGeneralLog);
+    ui->filter_general_log->setPlaceholderText("Buscar no log geral...");
+    // Conectar botão de limpar para apagar todo o log geral
+    connect(ui->clean_all_output, &QPushButton::clicked, ui->general_log_screen, &QTextEdit::clear);
+    // Filtrar conteúdo do log geral
+    connect(ui->filter_general_log, &QLineEdit::textChanged, this, &MainWindow::filterGeneralLog);
 
-        ui->filter_servo_log->setPlaceholderText("Buscar no log do servo...");
-        // Conectar botão de limpar para apagar todo o log do servo
-        connect(ui->clean_all_output, &QPushButton::clicked, ui->general_log_screen, &QTextEdit::clear);
-        // filtrar conteúdo do log do servo
-        connect(ui->filter_servo_log, &QLineEdit::textChanged, this, &MainWindow::filterServoLog);
-    }
-    // servo communication setup
+    ui->filter_servo_log->setPlaceholderText("Buscar no log do servo...");
+    // Conectar botão de limpar para apagar todo o log do servo
+    connect(ui->clean_all_output, &QPushButton::clicked, ui->general_log_screen, &QTextEdit::clear);
+    // Filtrar conteúdo do log do servo
+    connect(ui->filter_servo_log, &QLineEdit::textChanged, this, &MainWindow::filterServoLog);
+
+    // configuração de comunicação com o servo
     ui->disable_servo_button->setEnabled(false);
     ui->disable_servo_button_2->setEnabled(false);
 
@@ -130,11 +137,12 @@ MainWindow::MainWindow(QWidget *parent)
     connect(myServo, &ServoMinas::operationStatusSignal,this, &MainWindow::operationOnOFFBehavior);
 
 
-    myServoThread->start(); // Inicializar thread do servo
+    // Inicializar thread do servo
+    myServoThread->start();
 
 }
 
-MainWindow::~MainWindow()
+MainWindow::~MainWindow() // destructor
 {
     if (myServoThread) { // caso a thread exista ao fechar a mainwindow
         myServoThread->quit(); // Solicita que a thread pare
@@ -142,8 +150,8 @@ MainWindow::~MainWindow()
         delete myServoThread;  // Libera a memória da thread
     }
     if(myMicronas)
-        myMicronas->closePort();
-    delete ui;
+        myMicronas->closePort(); // Fecha a comunicação com o micronas caso exista
+    delete ui;  // Libera a memória da interface gráfica
 }
 
 
@@ -158,16 +166,15 @@ void MainWindow::by_animate_dial_button_action()
     else
         QMessageBox::critical(this, "Erro", "Direção de giro do modelo inserido incorreta\nDeve ser:   'CW' ou 'CCW'");
 
-    double min = sensorData.start_angle;
-    double max= sensorData.arrive_angle;
+    double min = sensorData.start_angle; // minimos e maximos locais 
+    double max = sensorData.arrive_angle;
 
-    double real_angle;
+    double real_angle;      
     qDebug() << "Simulação de operação iniciada";
-    for(int i=10*min;i<=10*max;i++){
+    for(int i=10*min;i<=10*max;i++){ // loop de 10x dos minimos e maximos
 
-        real_angle=double(i)/10;
+        real_angle=double(i)/10; // calculo do angulo real
         qDebug() << "|" << min << "| -> |"  << max << "|     Posição do dial é:" << real_angle ;
-        this->setServoAngularPosition(real_angle,500);
         myAnimate_progress_bar->setValue(real_angle);
         myDial->setValue(real_angle);
         QEventLoop loop;
@@ -182,6 +189,7 @@ void MainWindow::by_sensorSelected_action()
 {
     // Cria a janela de seleção se ainda não existir
     sensorWindow = new SensorSelectionWindow(this);  // Define o MainWindow como pai
+    // assim que selecionar o sensor, chama a função updateSensorDependencies para dar update nos dados da tela principal
     connect(sensorWindow, &SensorSelectionWindow::sensorSelected, this, &MainWindow::updateSensorDependencies);
     sensorWindow->show();  // Mostra a janela de seleção
 
@@ -284,34 +292,34 @@ void MainWindow::on_actionAdicionar_triggered()
 void MainWindow::on_actionAtualizar_triggered()
 {
     if(myUser.type != "Administrador" && myUser.type != "Engenharia"){
-        QMessageBox::information(this,"Permissão negada", "Este tipo de operação só pode ser executada pelo Administrador ou pela Engenharia");
+        QMessageBox::information(this,"Permiss o negada", "Este tipo de opera o s  pode ser executada pelo Administrador ou pela Engenharia");
         return;
     }
-    // Create and show sensor selection window
+    // Criar e mostrar janela de sele o de sensores
     SensorSelectionWindow *selectionWindow = new SensorSelectionWindow(this);
     connect(selectionWindow, &SensorSelectionWindow::sensorSelected, this, [this](SensorData *selectedSensor) {
         if (selectedSensor) {
-            // Create and show update dialog with current sensor data
+            // Criar e mostrar di logo de atualiza o com dados do sensor selecionado
             UpdateSensorDialog updateDialog(*selectedSensor, this);
             if (updateDialog.exec() == QDialog::Accepted) {
-                // Read the CSV file
+                // Ler o arquivo CSV
                 QFile file("sensors.csv");
                 if (!file.open(QIODevice::ReadWrite | QIODevice::Text)) {
-                    QMessageBox::critical(this, "Erro", "Não foi possível abrir o arquivo sensors.csv");
+                    QMessageBox::critical(this, "Erro", "N o foi poss vel abrir o arquivo sensors.csv");
                     return;
                 }
 
-                // Read all lines
+                // Ler todas as linhas
                 QStringList lines;
                 QTextStream in(&file);
-                QString header = in.readLine(); // Save header
+                QString header = in.readLine(); // Salvar cabe alho
                 lines.append(header);
 
                 while (!in.atEnd()) {
                     QString line = in.readLine();
                     QStringList fields = line.split(',');
                     if (fields.size() >= 4 && fields[0] == selectedSensor->model_name) {
-                        // Replace this line with updated data
+                        // Substituir essa linha com dados atualizados
                         line = QString("%1,%2,%3,%4")
                                    .arg(updateDialog.getModelName())
                                    .arg(updateDialog.getStartAngle())
@@ -321,7 +329,7 @@ void MainWindow::on_actionAtualizar_triggered()
                     lines.append(line);
                 }
 
-                // Write back to file
+                // Escrever de volta no arquivo
                 file.resize(0);
                 QTextStream out(&file);
                 for (const QString &line : lines) {
@@ -434,7 +442,8 @@ void MainWindow::on_actionVer_Sensores_triggered()
     dialog.exec();  // Exibir como diálogo modal
 }
 
-void MainWindow::setDialDirection(QString direction_set){
+// configurar o sentido do dial com base no valor de direction_set
+void MainWindow::setDialDirection(QString direction_set){ 
     if (direction_set == "CW"){
         myDial->setInvertedAppearance(true);
     }
@@ -445,6 +454,8 @@ void MainWindow::setDialDirection(QString direction_set){
         QMessageBox::critical(this, "Erro", "Direção de giro do modelo inserido incorreta\nDeve ser:   'CW' ou 'CCW'");
 
 }
+
+//dar update nos widgets da mainWindow que dependem dos dados do sensor
 void MainWindow::updateSensorDependencies(SensorData *_sensorData) {
 
     // Atualizar dados do sensor mostrado
@@ -456,74 +467,75 @@ void MainWindow::updateSensorDependencies(SensorData *_sensorData) {
     myAnimate_progress_bar->setMinimum(this->sensorData.start_angle);
     myAnimate_progress_bar->setMaximum(this->sensorData.arrive_angle);
 
-    // Atualizar os dados do dial
-
     qDebug() << "\n\nSistema configurado e atualizado ao modelo:";
     qDebug() << "Model:" << sensorData.model_name;
     qDebug() << "Start Angle:" << sensorData.start_angle;
     qDebug() << "Arrive Angle:" << sensorData.arrive_angle;
     qDebug() << "Turn Direction:" << sensorData.turn_direction;
 
-    // Aba de operação
+    // Aba de operação habilitada
     ui->prepare_operation->setEnabled(true);
 }
 
-// Filtrar logs
+// update do log geral
 void MainWindow::updateGeneralLogContent()
 {
     originalGeneralLogContent = ui->general_log_screen->toPlainText();
 }
 
+// atualizar o log servo
 void MainWindow::updateServoLogContent()
 {
     originalServoLogContent = ui->servo_log_screen->toPlainText();
 }
 
+// Filtrar o log geral
 void MainWindow::filterGeneralLog(const QString &text)
 {
-    QString originalText = ui->general_log_screen->toPlainText(); // Store the ORIGINAL text
-    QStringList linhas = originalText.split("\n"); // Split the ORIGINAL text
+    QString originalText = ui->general_log_screen->toPlainText(); // Armazena o texto ORIGINAL
+    QStringList linhas = originalText.split("\n"); // Separa o texto ORIGINAL em linhas
     QStringList linhasFiltradas;
 
-    if (text.isEmpty()) { // If the filter text is empty, show all lines
+    if (text.isEmpty()) { // Se o texto de filtro estiver vazio, mostrar todas as linhas
         ui->general_log_screen->clear();
-        ui->general_log_screen->append(originalText); // Restore the ORIGINAL content
-        return; // Exit the function early
+        ui->general_log_screen->append(originalText); // Restaura o conteúdo ORIGINAL
+        return; // Sai da fun o cedo
     }
 
     for (const QString &linha : linhas) {
-        if (linha.contains(text, Qt::CaseInsensitive)) { // Use the received 'text'
-            linhasFiltradas.append(linha); // Keep the line if it contains the filter text
+        if (linha.contains(text, Qt::CaseInsensitive)) { // Usa o texto de filtro recebido
+            linhasFiltradas.append(linha); // Mantém a linha se ela contiver o texto de filtro
         }
     }
 
-    ui->general_log_screen->clear(); // Clear the text edit
-    ui->general_log_screen->append(linhasFiltradas.join("\n")); // Display the filtered lines
+    ui->general_log_screen->clear(); // Limpa a área de texto
+    ui->general_log_screen->append(linhasFiltradas.join("\n")); // Mostra as linhas filtradas
 }
 
+// Filtrar o log servo
 void MainWindow::filterServoLog(const QString &text)
 {
-    QString originalText = ui->servo_log_screen->toPlainText(); // Store the ORIGINAL text
-    QStringList linhas = originalText.split("\n"); // Split the ORIGINAL text
+    QString originalText = ui->servo_log_screen->toPlainText(); // Armazena o texto ORIGINAL
+    QStringList linhas = originalText.split("\n"); // Separa o texto ORIGINAL em linhas
     QStringList linhasFiltradas;
 
-    if (text.isEmpty()) { // If the filter text is empty, show all lines
+    if (text.isEmpty()) { // Se o texto de filtro estiver vazio, mostrar todas as linhas
         ui->servo_log_screen->clear();
-        ui->servo_log_screen->append(originalText); // Restore the ORIGINAL content
-        return; // Exit the function early
+        ui->servo_log_screen->append(originalText); // Restaura o conteúdo ORIGINAL
+        return; // Sai da fun o cedo
     }
 
     for (const QString &linha : linhas) {
-        if (linha.contains(text, Qt::CaseInsensitive)) { // Use the received 'text'
-            linhasFiltradas.append(linha); // Keep the line if it contains the filter text
+        if (linha.contains(text, Qt::CaseInsensitive)) { // Usa o texto de filtro recebido
+            linhasFiltradas.append(linha); // Mantém a linha se ela contiver o texto de filtro
         }
     }
 
-    ui->servo_log_screen->clear(); // Clear the text edit
-    ui->servo_log_screen->append(linhasFiltradas.join("\n")); // Display the filtered lines
+    ui->servo_log_screen->clear(); // Limpa a área de texto
+    ui->servo_log_screen->append(linhasFiltradas.join("\n")); // Mostra as linhas filtradas
 }
 
-// Configurações do comportamento do dial reativo
+// Configura es do comportamento do dial reativo
 
 void MainWindow::configDial(QDial *_myDial){
     _myDial->setInvertedAppearance(false);
@@ -531,7 +543,7 @@ void MainWindow::configDial(QDial *_myDial){
     _myDial->setMaximum(sensorData.arrive_angle);
     _myDial->setNotchesVisible(true);
     _myDial->setNotchTarget(3.7);
-    _myDial->setWrapping(true); // Definir comportamento de wrapping
+    _myDial->setWrapping(true);
     _myDial->setSingleStep(1);
     _myDial->setValue(this->sensorData.start_angle);
     _myDial->setStyleSheet(
@@ -544,7 +556,6 @@ void MainWindow::configDial(QDial *_myDial){
         "subcontrol-origin: red"
         "}"
         );
-
 
 }
 
@@ -600,10 +611,6 @@ void MainWindow::on_actionAtualizar_2_triggered()
 }
 
 
-
-// Funcionalidades relacionada ao micronas
-
-
 //  Funções de comunicação ao servo
 void MainWindow::servoState(bool servoSituation)
 {
@@ -614,6 +621,7 @@ void MainWindow::servoState(bool servoSituation)
         qDebug() << " -> Servo não está conectado\n";
 }
 
+// Função para o controle dos widgets da mainWindow em função do estad do botão de comunicaçãos
 void MainWindow::servoCommunicationBox_stateChanged(bool toogled)
 {
 
@@ -637,8 +645,10 @@ void MainWindow::servoCommunicationBox_stateChanged(bool toogled)
     }
 }
 
+//inicializar o servo e enviar sinal para iniciar a thread do servo
 void MainWindow::initializeServo() { emit initSignal(); }
 
+//parar a operação e enviar sinal para parar a thread do servo
 void MainWindow::stopOperation()
 {
 
@@ -647,25 +657,27 @@ void MainWindow::stopOperation()
     qDebug()<< "Operação parada";
 }
 
+//inicializar o homing e enviar sinal para iniciar a a sub thread de operação do servo
 void MainWindow::startHoming()
 {
     emit startHomingSignal();// inicializar homing
     qDebug() << "inicializar o homing";
 }
 
+// função de movimentação do servo absoluta para a posição desejada em graus
 void MainWindow::insertedAngleToAchieve(){
     setDialDirection("CCW"); // direção para movimento absoluto
-    bool ok,ok_velocity=1;
+    bool ok, ok_velocity=1;
     double insertedValue = myInsertAbsolute->text().toDouble(&ok);
     qDebug() << "Valor alterado para:" << insertedValue;
     int velocity = 50; // valor padrão
-    int velocity_virtualLimit = 551; // parametro que deve mudar segundo a configuração da engenharia
+    int velocity_virtualLimit = 551; // parametro que deve mudar segundo a configuração da engenharia ISSO AQUI DEVE SER ALTERADO
     if(!ui->servo_velocity_setup->text().isEmpty()) // se ouver algo dentro da celular de velocidade, irá usar o valor de la
     {
         velocity = ui->servo_velocity_setup->text().toDouble(&ok_velocity);
-        if(velocity<=0 || velocity >velocity_virtualLimit)
+        if(velocity <= 0 || velocity > velocity_virtualLimit)
         {
-            velocity=50;
+            velocity = 50;
             QMessageBox::critical(this, "Erro", QString("Insira o dado de velocidade até %1 rad/s").arg(velocity_virtualLimit));
         }
 
@@ -766,7 +778,7 @@ void MainWindow::on_start_operation_released()
     }
 }
 
-
+// limpar os erros do servo
 void MainWindow::clearServoErrors()
 {
     emit resetErrorsSignal();
@@ -839,15 +851,6 @@ void MainWindow::on_right_jog_released()
 }
 
 
-void MainWindow::setServoAngularPosition(double angle, double velocity){
-
-        // definir o envio do pacote, ver se foi um sucesso e possivelmente enviar um não void para verificação
-}
-
-
-//  -------------- setters e getters para os dados da main --------------
-
-
 void MainWindow::setSensorData(SensorData _data)
 {
     this->sensorData = _data;
@@ -859,6 +862,7 @@ double castoTo360(double value){
     double result = fmod(fabs(value), 360.0);
     return (value >= 0)? result: -result;
 }
+// atualizar a tela com os dados do servo atual (input)
 void MainWindow::updateActualServoData(minas_control::MinasInput input){
     uint32_t raw_servo_value = input.position_actual_value; // valor absoluto unsigned int 32
     int32_t signed_angle = static_cast<int32_t>(raw_servo_value); // valor com sinal de 32 bits
@@ -880,12 +884,10 @@ void MainWindow::updateActualServoData(minas_control::MinasInput input){
     if(sensorData.turn_direction=="CCW")
         myAnimate_progress_bar->setValue(absolute_angle);
 }
+// função para chamar as leituras dos inputs do servo
+void MainWindow::readInputsUpdate(){emit readInputNowSignal();}
 
-void MainWindow::readInputsUpdate(){
-    emit readInputNowSignal();
-}
-
-
+// Função para bloquear ou desbloquear widgets em função do botão de operação
 void MainWindow::operationOnOFFBehavior(bool status){
     // status true: em operação
     // status false: não está em operação
@@ -900,6 +902,10 @@ void MainWindow::operationOnOFFBehavior(bool status){
     ui->clear_errors->setEnabled(!status);
 
 }
+
+
+//  -------------- setters e getters para os dados da main --------------
+
 
 QString MainWindow::getModelName()
 {
@@ -920,6 +926,9 @@ QString MainWindow::getTurnDirection()
 {
     return this->sensorData.turn_direction ;
 }
+
+
+// -- -- -- -- área da engenharia -- -- -- -- 
 
 //função auxiliar para incrementar os itens recursivamente
 void addJsonToTree(const QJsonObject &jsonObj, QStandardItem *parentItem) {

@@ -56,7 +56,7 @@ signals:
     void moveServoToPositionSignal(double position, double velocity);
     void startHomingSignal();
     void resetErrorsSignal();
-    //jogging signals
+    // sinal do jog
     void jogSignal(double amount, double velocity,double step);
 
     //requisitar leitura da posição atual do encoder
@@ -92,13 +92,12 @@ private slots:
     void servoState(bool servoSituation);
 
     //  Funções de controle EtherCAT
-    void stopOperation();
     void initializeServo();
+    void stopOperation();
     void startHoming ();
     void clearServoErrors();
     void insertedAngleToAchieve();
-    void setServoAngularPosition(double angle, double velocity);    //  envia comando para o servo de posicionamento
-    // Controle jogging
+    // botão de controle jogging
     void on_left_jog_released();
     void on_right_jog_released();
 
@@ -134,39 +133,40 @@ private slots:
 
 private:
     // ponteiros para as estruturas a baixo da janela principal
-    Ui::MainWindow *ui;
-    QDial *myDial;
-    QProgressBar *myAnimate_progress_bar;
-    QDoubleSpinBox *mySpinBox;
-    QLineEdit *myInsertAbsolute;
-    SensorSelectionWindow *sensorWindow;
-    SensorData sensorData;
-    LogServoWindow *logServoWindow;
+    Ui::MainWindow *ui;                     // ponteiro para a interface
+    QDial *myDial;                          // ponteiro para o dial
+    QProgressBar *myAnimate_progress_bar;   // ponteiro para a barra de progresso
+    QDoubleSpinBox *mySpinBox;              // ponteiro para o spin box
+    QLineEdit *myInsertAbsolute;            // ponteiro para o campo de insersão de angulo absoluto
+    SensorSelectionWindow *sensorWindow;    // ponteiro para a janela de seleção de sensor
+    SensorData sensorData;                  // dados do sensor
+    LogServoWindow *logServoWindow;         // ponteiro para a janela de log do servo
 
     //  Página de configurações da Engenharia
-    QTreeView *myParameters_TreeView ;
-    QStandardItemModel *model_tree ;
+    QTreeView *myParameters_TreeView ; // ponteiro para a tree view da página de configurações da engenharia
+    QStandardItemModel *model_tree ; // ponteiro para o modelo da tree view
 
     //  Classe que cuida dos logs
-    LogHandler * logHandler;
+    LogHandler * logHandler;          // ponteiro para a classe que cuida dos logs
     //  Subtela de logs
-    QString originalGeneralLogContent;
-    QString originalServoLogContent;
+    QString originalGeneralLogContent;// variável que guarda o conteúdo original da subtela de logs -> log geral
+    QString originalServoLogContent;  // variável que guarda o conteúdo original da subtela de logs -> log do servo
 
     //  Classe dos logins e CRUD de usuários
     UsersHandler *usersHandler;
 
-    QThread *myServoThread; //  Thread para deploy da classe myServo
-    ServoMinas *myServo;    //  Classe ServoMinas para executar as operações e comunicações com o servo
-    UserType myUser;  // Guarda o nome do usuário e sua permissão de acesso na página
-    uint32 actual_servo_value;  // variável que guarda a posição atual do servo em hexa
-    double actual_servo_angle;    // variável que guarda o ângulo atual do servo em graus
-    bool servoUP;       // variável para ver se o servo está habilitado
+    QThread *myServoThread;              //  Thread para deploy da classe myServo
+    ServoMinas *myServo;                 //  Classe ServoMinas para executar as operações e comunicações com o servo
+    UserType myUser;                     // Guarda o nome do usuário e sua permissão de acesso na página
+    uint32 actual_servo_value;           // variável que guarda a posição atual do servo em hexa
+    double actual_servo_angle;           // variável que guarda o ângulo atual do servo em graus
+    bool servoUP;                        // variável para ver se o servo está habilitado
 
-    //cofigurar o dial
+    //configurar o dial
     void configDial(QDial *_myDial);
     void setDialDirection(QString direction_set);
 
+    // configurar o micronas (classe de comunicação serial com o micronas)
     SerialMicronas *myMicronas;
 
 

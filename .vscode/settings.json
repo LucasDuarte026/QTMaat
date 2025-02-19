@@ -1,6 +1,7 @@
 {
     "files.associations": {
         "iomanip": "cpp",
-        "system_error": "cpp"
+        "system_error": "cpp",
+        "qdebug": "cpp"
     }
 }

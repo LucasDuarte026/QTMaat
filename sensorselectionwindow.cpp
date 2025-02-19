@@ -8,12 +8,13 @@
 
 SensorSelectionWindow::SensorSelectionWindow(QWidget *parent)
     : QWidget(parent)
-    , filterEdit(new QLineEdit(this))
-    , sensorList(new QListWidget(this))
-    , okButton(new QPushButton("OK", this))
-    , cancelButton(new QPushButton("Cancel", this))
+    , filterEdit(new QLineEdit(this))  // Barra de filtro
+    , sensorList(new QListWidget(this))  // Lista de sensores
+    , okButton(new QPushButton("OK", this))  // Botão "OK"
+    , cancelButton(new QPushButton("Cancel", this))  // Botão "Cancel"
 {
-    setWindowTitle("Selecione um sensor");
+    // janela de seleção do sensor
+    setWindowTitle("Selecione um sensor"); 
     resize(500, 400);
 
     // Configurar layout principal
@@ -42,13 +43,13 @@ SensorSelectionWindow::SensorSelectionWindow(QWidget *parent)
     // Conectar o botão "Cancel"
     connect(cancelButton, &QPushButton::clicked, this, &SensorSelectionWindow::cancelSelection);
 
-    // setAttribute(Qt::WA_DeleteOnClose); // toda vez que a janela for fechada, excluir a classe
 }
 
 SensorSelectionWindow::~SensorSelectionWindow()
 {
 }
 
+// Carrega os sensores do CSV para dentro da lista sensorList
 void SensorSelectionWindow::loadSensors()
 {
     QFile file("sensors.csv");
@@ -74,19 +75,21 @@ void SensorSelectionWindow::loadSensors()
     file.close();
 }
 
+// Filtra os sensores da janela
 void SensorSelectionWindow::filterSensors(const QString &text)
-{
+{ 
     for (int i = 0; i < sensorList->count(); ++i) {
         QListWidgetItem *item = sensorList->item(i);
         item->setHidden(!item->text().contains(text, Qt::CaseInsensitive));  // Mostra/esconde com base no filtro
     }
 }
 
+// Confirma a seleção de um sensor com o botão "OK"
 void SensorSelectionWindow::confirmSelection()
 {
     QListWidgetItem *selectedItem = sensorList->currentItem(); // Obtém o item selecionado
 
-    if (selectedItem) {
+    if (selectedItem) { // busca o resto dos valores o item selecionado
         QString filePath = QCoreApplication::applicationDirPath() + "/sensors.csv";
         QFile file(filePath);
 
@@ -145,7 +148,7 @@ void SensorSelectionWindow::confirmSelection()
 
         close(); // Fecha a janela
     } else {
-        QMessageBox::warning(this, "No Selection", "Selecione um sensor.");
+        QMessageBox::warning(this, "Sem selecão", "Selecione um sensor.");
     }
 }
 
@@ -153,5 +156,3 @@ void SensorSelectionWindow::cancelSelection()
 {
     close();  // Fecha a janela sem fazer nada
 }
-
-

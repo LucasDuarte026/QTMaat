@@ -1164,6 +1164,27 @@
      <height>23</height>
     </rect>
    </property>
+   <widget class="QMenu" name="menuteste">
+    <property name="title">
+     <string>Usuários</string>
+    </property>
+    <addaction name="login_menuBar"/>
+    <addaction name="actionLogout"/>
+    <addaction name="separator"/>
+    <addaction name="actionVer_usu_rios"/>
+    <addaction name="actionAdicionar_2"/>
+    <addaction name="actionAtualizar_2"/>
+    <addaction name="actionRemover_2"/>
+   </widget>
+   <widget class="QMenu" name="menuSensores">
+    <property name="title">
+     <string>Sensores</string>
+    </property>
+    <addaction name="actionVer_Sensores"/>
+    <addaction name="actionAdicionar"/>
+    <addaction name="actionAtualizar"/>
+    <addaction name="actionRemover"/>
+   </widget>
    <widget class="QMenu" name="menuFile">
     <property name="enabled">
      <bool>true</bool>
@@ -1186,27 +1207,6 @@
     <property name="title">
      <string>Software</string>
     </property>
-   </widget>
-   <widget class="QMenu" name="menuteste">
-    <property name="title">
-     <string>Usuários</string>
-    </property>
-    <addaction name="login_menuBar"/>
-    <addaction name="actionLogout"/>
-    <addaction name="separator"/>
-    <addaction name="actionVer_usu_rios"/>
-    <addaction name="actionAdicionar_2"/>
-    <addaction name="actionAtualizar_2"/>
-    <addaction name="actionRemover_2"/>
-   </widget>
-   <widget class="QMenu" name="menuSensores">
-    <property name="title">
-     <string>Sensores</string>
-    </property>
-    <addaction name="actionVer_Sensores"/>
-    <addaction name="actionAdicionar"/>
-    <addaction name="actionAtualizar"/>
-    <addaction name="actionRemover"/>
    </widget>
    <addaction name="menuFile"/>
    <addaction name="menuSensor"/>
