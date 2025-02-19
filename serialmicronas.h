@@ -20,7 +20,8 @@ public:
 
     uint8_t getError();
     QString getFirmwareVersion();
-    bool setBaseAddress(uint8_t address);
+    bool setBaseAddress(uint8_t address,uint16_t data);
+    QString readAddress(uint8_t address);
 
 private:
     QString processResponse(const QByteArray &response);

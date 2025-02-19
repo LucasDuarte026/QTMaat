@@ -124,6 +124,8 @@ MainWindow::~MainWindow()
         myServoThread->wait(); // Aguarda a finalização da thread
         delete myServoThread;  // Libera a memória da thread
     }
+    if(myMicronas)
+        myMicronas->closePort();
     delete ui;
 }
 
@@ -991,10 +993,63 @@ void MainWindow::toggleTreeEditability(bool checked) {
     myParameters_TreeView->update();
 }
 
+// apaga
+// crc function original da documentação. foi traga aqui só pra teste local sem antes msm ligar a USB
+int calculateIntCrc(int data, int size)
+{
+    const unsigned char CRC_POLY = 0x13; // x^4 + x + 1
+    unsigned char crc = 0x0;
+    for (int i=0; i<size; i++)
+    {
+        if ((crc<<3 & 0x1) != (data >> (size - 1 - i) & 1))
+        {
+            crc = crc<<1;
+            crc ^= CRC_POLY;
+            crc &= 0xF;
+        }
+        else
+            crc <<= 1;
+    }
+    return crc&0xF;
+}
 
 // inicializar comunicação com o micronas
 void MainWindow::on_micronas_connect_released()
 {
+
+    const unsigned char CRC_POLY = 0x13;
+    unsigned char crc = 0;
+    int totalBits = 10 * 8; // total number of bits -> 10 caracteres * 8
+    QString baseCommand = "xxsb000001";    // 78 78 73 62 30 30 30 30 30 31
+
+    QByteArray full_command = baseCommand.toUtf8();
+    // Process each bit (MSB first for each byte)
+    for (int i = 0; i < totalBits; i++) {
+        // Calculate the bit position: i/8 gives the byte index,
+        // (7 - (i % 8)) gives the bit index within that byte (MSB first)
+        bool bit = (full_command.at(i / 8) >> (7 - (i % 8))) & 0x1;
+        // Compare the MSB (bit 3) of crc with the current data bit.
+        if (((crc >> 3) & 0x1) != bit) {
+            crc = (crc << 1) ^ CRC_POLY;
+        } else {
+            crc <<= 1;
+        }
+        crc &= 0xF; // keep crc to 4 bits
+    }
+    qDebug()<< "Para " <<baseCommand <<"| crc: " << crc;
+
+    uint32_t value = 0;
+    int command_size = full_command.size();
+    for (int i = 0; i < command_size; ++i) {
+        value |= full_command.at(i) << (i * 8);
+    }
+    int crc2 = calculateIntCrc(value,command_size);
+    qDebug() <<"int value : "<< value << QString::number(value,16).toUpper();
+    qDebug() <<"(CRC2):     "<< crc2  << QString::number(crc2 ,16).toUpper();
+
+    return;  // parada para teste aqui
+
+
     myMicronas = new SerialMicronas(this);
     connect(myMicronas,&SerialMicronas::errorOccurred,this,&MainWindow::errorFromMicronas);
     connect(myMicronas,&SerialMicronas::messageMicronas_signal,this,&MainWindow::messageFromMicronas);
@@ -1031,20 +1086,15 @@ void MainWindow::on_micronas_connect_released()
         return;
     }
 
-    // uint8_t registerAddress = 0x01;
-    // uint16_t readData = myMicronas->setBaseAddress(registerAddress);
-    // qDebug() << "registador "<<registerAddress<<" tem tal informacção"<<readData;
+    uint8_t baseAddress = 0x00;
+    uint16_t dataBase = 0x0001;
+    myMicronas->setBaseAddress(baseAddress, dataBase);
+    qDebug() << "baseAddress: "<< baseAddress;
 
-    // uint8_t registerAddress = 0x22;
-    // uint16_t readData = myMicronas->readAddress(registerAddress);
-    // qDebug() << "registador "<<registerAddress<<" tem tal informacção"<<readData;
+    uint8_t registerAddress = 0x01;
+    QString readData = myMicronas->readAddress(registerAddress);
+    qDebug() << "registador: "<<registerAddress<<" -> tem tal informação: "<<readData;
 }
-
-
-
-
-
-
 
 void MainWindow::errorFromMicronas(const QString &errorMessage)
 {
