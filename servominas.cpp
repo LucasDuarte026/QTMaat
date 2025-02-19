@@ -45,10 +45,11 @@ bool ServoMinas::initialize() {
         qDebug() << "Inicializando o gerenciador EtherCAT...";
 
         if (manager->getNumClients() < 1) {
-            emit initializationFinished(false);
-            QMessageBox::information(nullptr, "Falha", "Certifique-se que o servo está conectado");
             message = "Certifique-se que o servo está conectado";
             emit logMessage(message);
+            emit initializationFinished(false); // Emitir sinal de não exito
+            manager = nullptr;
+            client = nullptr;
             return false; // Importante: Sair cedo se nenhum cliente for encontrado
         }
 
@@ -64,15 +65,14 @@ bool ServoMinas::initialize() {
         return true;
 
     } catch (const ethercat::EtherCatError &e) {
-        emit initializationFinished(false);
-        message = "Certifique-se que o servo está conectado. " + QString(e.what());
 
-        QMessageBox::critical(nullptr, "Erro", QString("Falha ao inicializar o EtherCAT:\n") + QString(e.what()));
         manager = nullptr; // Importante: Redefinir o gerenciador em caso de falha
         client = nullptr;  // Redefinir o cliente também
 
+        message = "Certifique-se que o servo está conectado. " + QString(e.what());
         qDebug() << message;
         emit logMessage(message);
+        emit initializationFinished(false);
         return false;
     }
 }
@@ -82,9 +82,9 @@ void ServoMinas::enableServo(int mode) {
     if (client) {
         try{
             client->servoOn(mode);
-            client->setProfileVelocity(0x16000000);
-            client->setProfileAcceleration(0x80000000);
-            client->setProfileDeceleration(0x80000000);
+            client->setProfileVelocity(engParameters->safetyLimits.speed);
+            client->setProfileAcceleration(engParameters->safetyLimits.acceleration);
+            client->setProfileDeceleration(engParameters->safetyLimits.deceleration);
 
             QString name_mode;
             if (mode == 0x01) {
@@ -95,8 +95,7 @@ void ServoMinas::enableServo(int mode) {
                 name_mode = QString("Modo desconhecido: %1").arg(mode); // Lidar com modos desconhecidos
 
             }
-            message = QString("Servo habilitado no modo %1|%2").arg(mode).arg(name_mode);
-            // configurar as acelerações e velocidades de perfil. Não alterar
+            message = QString("Servo habilitado no modo %1 | %2").arg(mode).arg(name_mode);
 
         }
 
@@ -148,7 +147,7 @@ void ServoMinas::resetErrors() {
 void ServoMinas::configureSafetyLimits() {
     QString message;
     if (client) {
-        client->setTrqueForEmergencyStop(engParameters->safetyLimits.emergencyStopTorque                                                                    );
+        client->setTrqueForEmergencyStop(engParameters->safetyLimits.emergencyStopTorque);
         client->setOverLoadLevel(engParameters->safetyLimits.overloadLevel);
         client->setOverSpeedLevel(engParameters->safetyLimits.overspeedLevel);
         client->setMotorWorkingRange(engParameters->safetyLimits.motorWorkingLimit);

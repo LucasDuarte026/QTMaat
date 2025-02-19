@@ -207,7 +207,9 @@ bool SerialMicronas::setBaseAddress(uint8_t address, uint16_t data)
     }
 
     // colocaro CRC 1-digit hex no comando.
-    full_command.append(QString::number(crc, 16).toUtf8());
+    // full_command.append(QString::number(crc, 16).toUtf8());
+
+    full_command.append('d');
 
     qDebug() << "full_command:" << full_command << "CRC:" << QString::number(crc, 16);
     sendCommand(full_command);

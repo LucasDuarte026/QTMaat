@@ -147,7 +147,10 @@ void Worker::threadMoveAbsoluteTo(double position, double velocity) {
         output.controlword &= ~0x0010; // clear new-set-point (bit4)
         client->writeOutputs(output);
 
-        message = QString("🔄 Movendo servo para posição %1º | %2h | com velocidade %3").arg(position).arg(QString::number(output.target_position, 16).toUpper()).arg(velocity);
+        message = QString("🔄 Movendo servo para posição %1º | %2h | com velocidade %3")
+                      .arg(QString::number(position, 'f',4))
+                      .arg(QString::number(output.target_position, 16).toUpper())
+                      .arg(velocity);
     } else {
         message =  "Cliente não inicializado. Não é possível mover para a posição absoluta.";
         emit sendLog(message);
@@ -204,7 +207,10 @@ void Worker::threadMoveAbsoluteTo(double position, double velocity) {
         iterationCount++;
     }
     threadDisableServo();
-    emit sendLog(QString("✅ Sucesso na operação para a posição atual: %1º |  %2h | com velocidade %3").arg(position).arg(input.position_actual_value).arg(velocity));
+    emit sendLog(QString("✅ Sucesso na operação para a posição atual: %1º |  %2h | com velocidade %3")
+                     .arg(QString::number(position,'f',4))
+                     .arg(QString::number(input.position_actual_value,16).toUpper())
+                     .arg(velocity));
 
     emit finished();
 }
@@ -249,8 +255,11 @@ void Worker::threadMoveOffset(double amount, double velocity, double step) {
         output.controlword &= ~0x0010; // clear new-set-point (bit4)
         client->writeOutputs(output);
 
-        message = QString("🔄 Movendo servo para posição de  %1º | %2h | com velocidade %3").arg(amount*step).arg(QString::number(output.target_position, 16).toUpper()).arg(velocity);
-    } else {
+        message = QString("🔄 Movendo servo para posição de  %1º | %2h | com velocidade %3")
+                    .arg(QString::number(amount*step, 'f',4))
+                    .arg(QString::number(output.target_position, 16).toUpper())
+                    .arg(velocity);
+            } else {
         message =  "Cliente não inicializado. Não foi possivel executar executar o posicionamento relativo.";
         emit sendLog(message);
         return;
@@ -306,7 +315,10 @@ void Worker::threadMoveOffset(double amount, double velocity, double step) {
         iterationCount++;
     }
     threadDisableServo();
-    emit sendLog(QString("✅ Sucesso na operação para a posição relativa de %1º | para:  %2h | com velocidade %3").arg(amount*step).arg(output.target_position).arg(velocity));
+    emit sendLog(QString("✅ Sucesso na operação para a posição relativa em %1º | Atual:  %2h | com velocidade %3")
+                     .arg(QString::number(amount*step, 'f',4))
+                     .arg(QString::number(input.position_actual_value, 16).toUpper())
+                     .arg(velocity));
     emit finished();
 }
 

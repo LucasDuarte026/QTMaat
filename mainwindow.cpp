@@ -10,7 +10,7 @@ MainWindow::MainWindow(QWidget *parent)
     , myServo(nullptr)        // ponteiro para a classe que controla o servo
     , logServoWindow(nullptr) // ponteiro para a janela de log dentro da mainWindow
     , servoUP(false)          // bool que comunica o estado do servo (se está apto a ser usado)
-    , myUser{"Usuário comum","Produção"}
+    , myUser{"Comum","Produção"}
 {
 
     ui->setupUi(this); // configurar e iniciar os elementos definidos em UI
@@ -80,6 +80,8 @@ MainWindow::MainWindow(QWidget *parent)
     }
     // servo communication setup
     ui->disable_servo_button->setEnabled(false);
+    ui->disable_servo_button_2->setEnabled(false);
+
     // Connect checkbox toggle to the MainWindow signal
     connect(ui->enable_servo_communication, &QPushButton::toggled, this, &MainWindow::servoCommunicationBox_stateChanged);
 
@@ -106,7 +108,22 @@ MainWindow::MainWindow(QWidget *parent)
     //jogging signals
     connect (this, &MainWindow::jogSignal,myServo,&ServoMinas::moveOffset);
 
+    // responsividade após resultado de ligar ou não o servo
+    connect (myServo, &ServoMinas::initializationFinished,this,[this](bool situation){
+        if(situation){
+            qDebug()<< "Servo Habilitado";
+            ui->init_servo_button->setEnabled(false);
+            ui->disable_servo_button->setEnabled(true);
+            ui->disable_servo_button_2->setEnabled(true);
+            ui->enable_servo_communication->setEnabled(true);
 
+        }
+        else{
+            qDebug()<< "Servo não habilitado";
+            QMessageBox::information(nullptr, "Falha", "Falha ao inicializar o EtherCAT:\n");
+        }
+
+    });
     //  Atualização dos dados da tela em função da modificação do input or output do servo vindo do PDO
     connect(myServo, &ServoMinas::inputChangedSignal,this, &MainWindow::updateActualServoData);
     //  Atualização dos botẽs da tela em função do estado da operação
@@ -541,7 +558,7 @@ void MainWindow::on_login_menuBar_triggered()
 // Logout button ativo -> sair do usuário
 void MainWindow::on_actionLogout_triggered()
 {
-    myUser.username = "Usuário comum";
+    myUser.username = "Comum";
     myUser.type     = "Produção";
     ui->permission_label->setText(myUser.type);
     ui->user_label->setText(myUser.username);
@@ -565,7 +582,7 @@ void MainWindow::on_actionAdicionar_2_triggered()
 void MainWindow::on_actionRemover_2_triggered()
 {
     if(myUser.type == "Administrador")
-        usersHandler->showRemoveUserDialog(myUser);
+        usersHandler->showRemoveUserDialog();
     else
         QMessageBox::information(this,"Permissão negada", "Este tipo de operação só pode ser executada pelo Administrador");
 
@@ -573,7 +590,7 @@ void MainWindow::on_actionRemover_2_triggered()
 
 void MainWindow::on_actionAtualizar_2_triggered()
 {
-    if(myUser.username == "Usuário comum"){
+    if(myUser.username == "Comum"){
         QMessageBox::information(this,"Permissão negada", "Para atualizar, faça login!");
 
     }
@@ -620,31 +637,13 @@ void MainWindow::servoCommunicationBox_stateChanged(bool toogled)
     }
 }
 
-void MainWindow::initializeServo()
-{
-
-    emit initSignal();
-
-    connect (myServo, &ServoMinas::initializationFinished,this,[this](bool situation){
-        if(situation){
-            qDebug()<< "Servo Habilitado";
-            ui->init_servo_button->setEnabled(false);
-            ui->disable_servo_button->setEnabled(true);
-            ui->disable_servo_button_2->setEnabled(true);
-            ui->enable_servo_communication->setEnabled(true);
-
-        }
-        else
-            qDebug()<< "Servo não habilitado";
-    });
-
-
-}
+void MainWindow::initializeServo() { emit initSignal(); }
 
 void MainWindow::stopOperation()
 {
 
-    emit stopOperationSignal(); // Desabilitar o servo
+    emit stopOperationSignal(); // Desabilitar o
+    // ui->clear_errors->setEnabled(true);
     qDebug()<< "Operação parada";
 }
 
@@ -660,9 +659,17 @@ void MainWindow::insertedAngleToAchieve(){
     double insertedValue = myInsertAbsolute->text().toDouble(&ok);
     qDebug() << "Valor alterado para:" << insertedValue;
     int velocity = 50; // valor padrão
+    int velocity_virtualLimit = 551; // parametro que deve mudar segundo a configuração da engenharia
     if(!ui->servo_velocity_setup->text().isEmpty()) // se ouver algo dentro da celular de velocidade, irá usar o valor de la
     {
         velocity = ui->servo_velocity_setup->text().toDouble(&ok_velocity);
+        if(velocity<=0 || velocity >velocity_virtualLimit)
+        {
+            velocity=50;
+            QMessageBox::critical(this, "Erro", QString("Insira o dado de velocidade até %1 rad/s").arg(velocity_virtualLimit));
+        }
+
+
     }
     if(!ok_velocity){
         QMessageBox::critical(this, "Erro", "Insira o dado de velocidade corretamente: valor flutuante ");
@@ -682,10 +689,20 @@ void MainWindow::on_prepare_operation_released()
 {
 
     int velocity = 50; // valor padrão
-    bool ok=1;
+    bool ok=1,ok_velocity=1;
+    int velocity_virtualLimit = 551; // parametro que deve mudar segundo a configuração da engenharia
     if(!ui->servo_velocity_setup->text().isEmpty()) // se ouver algo dentro da celular de velocidade, irá usar o valor de la
     {
-        velocity = ui->servo_velocity_setup->text().toDouble(&ok);
+        velocity = ui->servo_velocity_setup->text().toDouble(&ok_velocity);
+        if(velocity<=0 || velocity >velocity_virtualLimit)
+        {       velocity=50;
+
+            QMessageBox::critical(this, "Erro", QString("Insira o dado de velocidade até %1 rad/s").arg(velocity_virtualLimit));
+    }
+    }
+    if(!ok_velocity){
+        QMessageBox::critical(this, "Erro", "Insira o dado de velocidade corretamente: valor flutuante ");
+
     }
     if(ok){
         if(sensorData.turn_direction== "CW"){
@@ -714,10 +731,19 @@ void MainWindow::on_prepare_operation_released()
 void MainWindow::on_start_operation_released()
 {
     int velocity = 50; // valor padrão
-    bool ok=1;
+    bool ok=1,ok_velocity=1;
+    int velocity_virtualLimit = 551; // parametro que deve mudar segundo a configuração da engenharia
     if(!ui->servo_velocity_setup->text().isEmpty()) // se ouver algo dentro da celular de velocidade, irá usar o valor de la
     {
-        velocity = ui->servo_velocity_setup->text().toDouble(&ok);
+        velocity = ui->servo_velocity_setup->text().toDouble(&ok_velocity);
+        if(velocity<=0 || velocity >velocity_virtualLimit)
+        {   velocity=50;
+            QMessageBox::critical(this, "Erro", QString("Insira o dado de velocidade até %1 rad/s").arg(velocity_virtualLimit));
+        }
+    }
+    if(!ok_velocity){
+        QMessageBox::critical(this, "Erro", "Insira o dado de velocidade corretamente: valor flutuante ");
+
     }
     if(ok){
         if(sensorData.turn_direction== "CW"){
@@ -754,9 +780,16 @@ void MainWindow::on_left_jog_released()
     double amount= ui->amountJog_lineEdit->text().toDouble(&ok_amount);
     double step = ui->step_lineEdit->text().toDouble(&ok_step);
     int velocity = 50; // valor padrão
+    int velocity_virtualLimit = 551; // parametro que deve mudar segundo a configuração da engenharia
     if(!ui->servo_velocity_setup->text().isEmpty()) // se ouver algo dentro da celular de velocidade, irá usar o valor de la
     {
         velocity = ui->servo_velocity_setup->text().toDouble(&ok_velocity);
+        if(velocity<=0 || velocity >velocity_virtualLimit)
+        {
+            velocity=50;
+            QMessageBox::critical(this, "Erro", QString("Insira o dado de velocidade até %1 rad/s").arg(velocity_virtualLimit));
+        }
+
     }
     if(!ok_velocity){
         QMessageBox::critical(this, "Erro", "Insira o dado de velocidade corretamente: valor flutuante ");
@@ -781,9 +814,15 @@ void MainWindow::on_right_jog_released()
     double amount= ui->amountJog_lineEdit->text().toDouble(&ok_amount);
     double step = ui->step_lineEdit->text().toDouble(&ok_step);
     int velocity = 50; // valor padrão
+    int velocity_virtualLimit = 551; // parametro que deve mudar segundo a configuração da engenharia
     if(!ui->servo_velocity_setup->text().isEmpty()) // se ouver algo dentro da celular de velocidade, irá usar o valor de la
     {
         velocity = ui->servo_velocity_setup->text().toDouble(&ok_velocity);
+        if(velocity<=0 || velocity >velocity_virtualLimit)
+        {
+            velocity=50;
+            QMessageBox::critical(this, "Erro", QString("Insira o dado de velocidade até %1 rad/s").arg(velocity_virtualLimit));
+        }
     }
     if(!ok_velocity){
         QMessageBox::critical(this, "Erro", "Insira o dado de velocidade corretamente: valor flutuante ");
@@ -858,6 +897,8 @@ void MainWindow::operationOnOFFBehavior(bool status){
     ui->left_jog->setEnabled(!status);
     ui->prepare_operation->setEnabled(!status);
     ui->start_operation->setEnabled(!status);
+    ui->clear_errors->setEnabled(!status);
+
 }
 
 QString MainWindow::getModelName()
@@ -1017,37 +1058,37 @@ int calculateIntCrc(int data, int size)
 void MainWindow::on_micronas_connect_released()
 {
 
-    const unsigned char CRC_POLY = 0x13;
-    unsigned char crc = 0;
-    int totalBits = 10 * 8; // total number of bits -> 10 caracteres * 8
-    QString baseCommand = "xxsb000001";    // 78 78 73 62 30 30 30 30 30 31
+    // const unsigned char CRC_POLY = 0x13;
+    // unsigned char crc = 0;
+    // int totalBits = 10 * 8; // total number of bits -> 10 caracteres * 8
+    // QString baseCommand = "xxsb000001";    // 78 78 73 62 30 30 30 30 30 31
 
-    QByteArray full_command = baseCommand.toUtf8();
-    // Process each bit (MSB first for each byte)
-    for (int i = 0; i < totalBits; i++) {
-        // Calculate the bit position: i/8 gives the byte index,
-        // (7 - (i % 8)) gives the bit index within that byte (MSB first)
-        bool bit = (full_command.at(i / 8) >> (7 - (i % 8))) & 0x1;
-        // Compare the MSB (bit 3) of crc with the current data bit.
-        if (((crc >> 3) & 0x1) != bit) {
-            crc = (crc << 1) ^ CRC_POLY;
-        } else {
-            crc <<= 1;
-        }
-        crc &= 0xF; // keep crc to 4 bits
-    }
-    qDebug()<< "Para " <<baseCommand <<"| crc: " << crc;
+    // QByteArray full_command = baseCommand.toUtf8();
+    // // Process each bit (MSB first for each byte)
+    // for (int i = 0; i < totalBits; i++) {
+    //     // Calculate the bit position: i/8 gives the byte index,
+    //     // (7 - (i % 8)) gives the bit index within that byte (MSB first)
+    //     bool bit = (full_command.at(i / 8) >> (7 - (i % 8))) & 0x1;
+    //     // Compare the MSB (bit 3) of crc with the current data bit.
+    //     if (((crc >> 3) & 0x1) != bit) {
+    //         crc = (crc << 1) ^ CRC_POLY;
+    //     } else {
+    //         crc <<= 1;
+    //     }
+    //     crc &= 0xF; // keep crc to 4 bits
+    // }
+    // qDebug()<< "Para " <<baseCommand <<"| crc: " << crc;
 
-    uint32_t value = 0;
-    int command_size = full_command.size();
-    for (int i = 0; i < command_size; ++i) {
-        value |= full_command.at(i) << (i * 8);
-    }
-    int crc2 = calculateIntCrc(value,command_size);
-    qDebug() <<"int value : "<< value << QString::number(value,16).toUpper();
-    qDebug() <<"(CRC2):     "<< crc2  << QString::number(crc2 ,16).toUpper();
+    // uint32_t value = 0;
+    // int command_size = full_command.size();
+    // for (int i = 0; i < command_size; ++i) {
+    //     value |= full_command.at(i) << (i * 8);
+    // }
+    // int crc2 = calculateIntCrc(value,command_size);
+    // qDebug() <<"int value : "<< value << QString::number(value,16).toUpper();
+    // qDebug() <<"(CRC2):     "<< crc2  << QString::number(crc2 ,16).toUpper();
 
-    return;  // parada para teste aqui
+    // return;  // parada para teste aqui
 
 
     myMicronas = new SerialMicronas(this);

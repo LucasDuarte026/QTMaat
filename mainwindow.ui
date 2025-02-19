@@ -58,14 +58,14 @@
             <item alignment="Qt::AlignmentFlag::AlignHCenter">
              <widget class="QLabel" name="user_label">
               <property name="text">
-               <string>N/A</string>
+               <string>Comum</string>
               </property>
              </widget>
             </item>
             <item alignment="Qt::AlignmentFlag::AlignHCenter">
              <widget class="QLabel" name="permission_label">
               <property name="text">
-               <string>N/A</string>
+               <string>Produção</string>
               </property>
              </widget>
             </item>
@@ -383,7 +383,7 @@
          <enum>QTabWidget::TabPosition::North</enum>
         </property>
         <property name="currentIndex">
-         <number>4</number>
+         <number>0</number>
         </property>
         <property name="elideMode">
          <enum>Qt::TextElideMode::ElideMiddle</enum>
@@ -475,6 +475,9 @@
                  </item>
                  <item>
                   <widget class="QPushButton" name="homing_button">
+                   <property name="enabled">
+                    <bool>false</bool>
+                   </property>
                    <property name="text">
                     <string>Homing</string>
                    </property>
@@ -485,6 +488,9 @@
                  </item>
                  <item>
                   <widget class="QPushButton" name="clear_errors">
+                   <property name="enabled">
+                    <bool>false</bool>
+                   </property>
                    <property name="text">
                     <string>Limpar erros</string>
                    </property>

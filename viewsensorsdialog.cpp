@@ -58,6 +58,7 @@ void ViewSensorsDialog::loadCsvData(const QString &filePath)
     // Configurar cabeçalhos na tabela
     tableWidget->setColumnCount(headers.size());
     tableWidget->setHorizontalHeaderLabels(headers);
+    tableWidget->setEditTriggers(QAbstractItemView::NoEditTriggers); // Impede edição da tabela
 
     // Adicionar as linhas
     tableWidget->setRowCount(rows.size());

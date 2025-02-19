@@ -103,7 +103,15 @@ void AddSensorDialog::validateInputs()
         return;
     }
     if(end<=start){
-        QMessageBox::warning(this, "Formato inválido", "Insira os o ângulo final maior que âangulo de entrada\n -> Use a lógica Clockwise ou CounterClockwise");
+        QMessageBox::warning(this, "Formato inválido", "Insira o ângulo final maior que ângulo de início\n -> Use a lógica Clockwise ou CounterClockwise");
+        return;
+    }
+    if(start<0 or end < 0){
+        QMessageBox::warning(this, "Formato inválido", "Insira valores positivos");
+        return;
+    }
+    if(start>360 or end >360){
+        QMessageBox::warning(this, "Formato inválido", "Insira valores até 360º");
         return;
     }
 

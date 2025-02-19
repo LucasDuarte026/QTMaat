@@ -16,7 +16,7 @@ public:
 
     void showAddUserDialog(UserType myUser);       // Função que adiciona um novo usuário
     void showViewUsersDialog(UserType myUser);     // Função que abre a visibilidade dos usuários do sistema
-    void showRemoveUserDialog(UserType myUser);    // Função para remover um usuário
+    void showRemoveUserDialog();    // Função para remover um usuário
     void showUpdateUserDialog(UserType myUser);    // Função para dar update no usuário já cadastrado
 
     // Aba de login
@@ -36,8 +36,6 @@ private:
     bool validateCredentials(const QString &type, const QString &username, const QString &password); // validar as credenciais para login
     //    Variáveis que seguram os dados atuais do usuário feito login
     UserType full_user;
-    QString user_type;
-    QString username;
     QString password;
 };
 

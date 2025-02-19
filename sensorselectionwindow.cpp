@@ -56,7 +56,6 @@ void SensorSelectionWindow::loadSensors()
         qWarning() << "Falha em abrir o DataBase!";
         return;
     }
-    qDebug() << "loadSensors";
     QTextStream in(&file);
 
     // Pula o cabeçalho do CSV
