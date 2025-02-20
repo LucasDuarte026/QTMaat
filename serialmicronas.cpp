@@ -53,7 +53,7 @@ QString SerialMicronas::sendCommand(const QString &command)
 
     QString formattedCommand = command + "\r\n";
     serial->write(formattedCommand.toUtf8());
-    if (!serial->waitForReadyRead(500)) {
+    if (!serial->waitForReadyRead(1000)) {
         emit errorOccurred("Erro: Nenhuma resposta recebida.");
         return QString();
     }
@@ -131,7 +131,7 @@ QString SerialMicronas::readAddress(uint8_t address){
     // transformar uint8_t (byte) em 2 dígitos hex em string
     QByteArray address2Byte= QString("%1").arg(address,2,16,QChar('0')).toUtf8();
     QString full_address = QString(address2Byte);
-    return sendCommand("xxr" + full_address); // exemplo xxr01 xxrFF
+    return sendCommand("xxr" + full_address); // exemplos: xxr01 xxrFF xxr0E
 
 }
 
@@ -206,10 +206,10 @@ bool SerialMicronas::setBaseAddress(uint8_t address, uint16_t data)
         crc &= 0xF; // keep crc to 4 bits
     }
 
-    // colocaro CRC 1-digit hex no comando.
-    // full_command.append(QString::number(crc, 16).toUtf8());
+    // colocar o CRC 1-digit hex no comando.
+    full_command.append(QString::number(crc, 16).toUtf8());
+    // full_command.append('d');
 
-    full_command.append('d');
 
     qDebug() << "full_command:" << full_command << "CRC:" << QString::number(crc, 16);
     sendCommand(full_command);

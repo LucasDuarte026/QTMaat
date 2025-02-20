@@ -1130,7 +1130,7 @@ void MainWindow::on_micronas_connect_released()
     qDebug() << "Versão do firmware é: "<< firmwareVersion;
 
     // configurar a base:
-    if(!myMicronas->setBoardMode('C')){
+    if(!myMicronas->setBoardMode('A')){
         qCritical() << "Falha ao abrir ao configurar modo de placa.";
         myMicronas->closePort();
         return;
@@ -1144,6 +1144,8 @@ void MainWindow::on_micronas_connect_released()
     uint8_t registerAddress = 0x01;
     QString readData = myMicronas->readAddress(registerAddress);
     qDebug() << "registador: "<<registerAddress<<" -> tem tal informação: "<<readData;
+
+
 }
 
 void MainWindow::errorFromMicronas(const QString &errorMessage)
