@@ -931,19 +931,23 @@ QString MainWindow::getTurnDirection()
 //função auxiliar para incrementar os itens recursivamente
 
 void addJsonToTree(const QJsonObject &jsonObj, QStandardItem *parentItem) {
-    for (auto it = jsonObj.begin(); it != jsonObj.end(); ++it) {
-        QStandardItem *item = new QStandardItem(it.key());
-        item->setEditable(false);
+    for (const QString &key : jsonObj.keys()) {
+        QJsonValue value = jsonObj.value(key);
+        QStandardItem *categoryItem = new QStandardItem(key);
+        categoryItem->setFlags(Qt::ItemIsEnabled);
+        parentItem->appendRow(categoryItem);
 
-        if (it.value().isObject()) {
-            addJsonToTree(it.value().toObject(), item);
+        if (value.isObject()) {
+            addJsonToTree(value.toObject(), categoryItem);
         } else {
-            item->setText(it.value().toString());
+            QStandardItem *valueItem = new QStandardItem(value.toVariant().toString());
+            valueItem->setFlags(Qt::ItemIsEditable); // Permitir edição
+            categoryItem->appendRow(valueItem);
         }
-
-        parentItem->appendRow(item);
     }
 }
+
+
 void MainWindow::configTag_engenharia() {
     QString filePath = QCoreApplication::applicationDirPath() + "/engenharia.json";
     QFile jsonFile(filePath);
