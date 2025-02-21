@@ -15,8 +15,6 @@ MainWindow::MainWindow(QWidget *parent)
 {
 
     ui->setupUi(this); // configurar e iniciar os elementos definidos em UI
-    setWindowTitle("Ma'at"); // Título da janela
-
 
     // Configuração da barra de menu para Linux
     ui->menubar->setNativeMenuBar(false);       
@@ -931,119 +929,85 @@ QString MainWindow::getTurnDirection()
 // -- -- -- -- área da engenharia -- -- -- -- 
 
 //função auxiliar para incrementar os itens recursivamente
-void addJsonToTree(const QJsonObject &jsonObj, QStandardItem *parentItem) {
-    for (const QString &key : jsonObj.keys()) {
-        QJsonValue value = jsonObj.value(key);
-        QStandardItem *categoryItem = new QStandardItem(key);
-        categoryItem->setFlags(Qt::ItemIsEnabled);
-        parentItem->appendRow(categoryItem);
 
-        if (value.isObject()) {
-            addJsonToTree(value.toObject(), categoryItem);
+void addJsonToTree(const QJsonObject &jsonObj, QStandardItem *parentItem) {
+    for (auto it = jsonObj.begin(); it != jsonObj.end(); ++it) {
+        QStandardItem *item = new QStandardItem(it.key());
+        item->setEditable(false);
+
+        if (it.value().isObject()) {
+            addJsonToTree(it.value().toObject(), item);
         } else {
-            QStandardItem *valueItem = new QStandardItem(value.toVariant().toString());
-            valueItem->setFlags(Qt::ItemIsEditable); // Permitir edição
-            categoryItem->appendRow(valueItem);
+            item->setText(it.value().toString());
         }
+
+        parentItem->appendRow(item);
     }
 }
-
 void MainWindow::configTag_engenharia() {
-    // JSON com as configurações do ServoMinas
-    QString jsonString = R"(
-    {
-      "ServoMinas": {
-        "LimitesDeSeguranca": {
-          "TorqueDeParadaEmergencia": 100,
-          "NivelDeOverload": 70,
-          "NivelDeOverspeed": 600,
-          "LimiteDeTrabalhoDoMotor": 0.1,
-          "PeriodoDeInterpolacaoDeTempo": 4000,
-          "Velocidade": "0x16000000",
-          "Aceleracao": "0x80000000",
-          "Desaceleracao": "0x80000000"
-        },
-        "Homing": {
-          "ProbeFunction": 8000000,
-          "SetSwitchSpeed": 8000000,
-          "HomingAcceleration": 33554432,
-          "HomingTorqueLimit": 500,
-          "HomingDetectionTime": 2048,
-          "HomingDetectionVelocity": 33554432,
-          "CommunicationFunctionExtendedSetup": 40,
-          "HomingReturnSpeedLimit": 20000,
-          "HomingMode": 34,
-          "TouchProbe": 7
-        },
-        "Posicionamento": {
-          "TorqueMaximo": 500,
-          "TargetTorque": 500
-        }
-      }
-    })";
+    QString filePath = QCoreApplication::applicationDirPath() + "/engenharia.json";
+    QFile jsonFile(filePath);
+    if (!jsonFile.open(QIODevice::ReadOnly)) {
+        qCritical() << "Erro em abrir o arquivo dos parâmetros da engenharia" << jsonFile.errorString();
+        return;
+    }
 
-    // Converter a string JSON para um objeto JSON
-    QJsonDocument jsonDoc = QJsonDocument::fromJson(jsonString.toUtf8());
+    QByteArray jsonData = jsonFile.readAll();
+
+    QJsonDocument jsonDoc = QJsonDocument::fromJson(jsonData);
     if (jsonDoc.isNull() || !jsonDoc.isObject()) {
-        qDebug() << "Erro ao carregar JSON!";
+        qCritical() << "Erro em processar o arquivo JSON";
         return;
     }
 
     QJsonObject rootObj = jsonDoc.object();
 
-    // Criar o modelo de árvore
     model_tree = new QStandardItemModel(this);
     QStandardItem *rootItem = new QStandardItem("Servo Minas");
     rootItem->setFlags(Qt::ItemIsEnabled);
     model_tree->appendRow(rootItem);
 
-    // Adicionar os dados do JSON na árvore usando a função auxiliar
     addJsonToTree(rootObj["ServoMinas"].toObject(), rootItem);
 
-    // Configurar a QTreeView
     myParameters_TreeView = ui->treeView_engenharia;
     myParameters_TreeView->setModel(model_tree);
-    myParameters_TreeView->setEditTriggers(QAbstractItemView::NoEditTriggers); // Inicialmente desativado
+    myParameters_TreeView->setEditTriggers(QAbstractItemView::SelectedClicked);
 
+    // Atualize a árvore para garantir que ela seja renderizada
+    myParameters_TreeView->update();
 
-    // Conectar a checkbox ao evento para habilitar/desabilitar edição
-    connect(ui->engineeringEdit_checkBox, &QCheckBox::toggled, this, &MainWindow::toggleTreeEditability);
+    connect(myParameters_TreeView, &QTreeView::clicked, this, &MainWindow::onEngineeringTreeItemClicked);
 }
 
-void MainWindow::toggleTreeEditability(bool checked) {
-    qDebug() << "Checkbox ativada: " << checked;
 
-    for (int i = 0; i < model_tree->rowCount(); ++i) {
-        QStandardItem *categoryItem = model_tree->item(i); // Ex: "Limites de Segurança", "Homing", etc.
-        if (!categoryItem) continue;
 
-        for (int j = 0; j < categoryItem->rowCount(); ++j) {
-            QStandardItem *subCategoryItem = categoryItem->child(j); // Ex: "Torque de parada de emergência"
-            if (!subCategoryItem) continue;
+void MainWindow::onEngineeringTreeItemClicked(const QModelIndex &index) {
+    QStandardItem *item = model_tree->itemFromIndex(index);
 
-            // O terceiro nível é onde os valores numéricos ficam
-            for (int k = 0; k < subCategoryItem->rowCount(); ++k) {
-                QStandardItem *valueItem = subCategoryItem->child(k); // Ex: "100", "500", etc.
-                if (valueItem && valueItem->rowCount() == 0) { // Apenas nós folha
-                    valueItem->setFlags(checked
-                                            ? (Qt::ItemIsEditable | Qt::ItemIsEnabled | Qt::ItemIsSelectable)
-                                            : (Qt::ItemIsEnabled | Qt::ItemIsSelectable));
-                }
-            }
+    if (item && item->rowCount() == 0) {
+        // Nó folha
+
+        if(myUser.type != "Administrador" && myUser.type != "Engenharia"){
+            QMessageBox::information(this,"Atenção","Estes parâmetros só podem ser alterados pela Engenharia. Faça login!");
+            return;
+        }
+        bool ok;
+        QString newValue = QInputDialog::getText(this, "Editar Valor", "Novo Valor:", QLineEdit::Normal, item->text(), &ok);
+
+        if (ok && !newValue.isEmpty()) {
+            item->setText(newValue);
+            // inserir função que atualiza o engParameters
         }
     }
-
-    // Atualizar a QTreeView para refletir a edição
-    QModelIndex topLeft = model_tree->index(0, 0);
-    QModelIndex bottomRight = model_tree->index(model_tree->rowCount() - 1, 0);
-    emit model_tree->dataChanged(topLeft, bottomRight);
-
-    // Certificar-se de que os valores sejam editáveis com duplo clique
-    myParameters_TreeView->setEditTriggers(QAbstractItemView::DoubleClicked);
-    myParameters_TreeView->update();
+    // nó não folha, abre ou fecha
+    if (myParameters_TreeView->isExpanded(index)) {
+        myParameters_TreeView->collapse(index);
+    } else {
+        myParameters_TreeView->expand(index);
+    }
 }
 
-// apaga
+// apagar
 // crc function original da documentação. foi traga aqui só pra teste local sem antes msm ligar a USB
 int calculateIntCrc(int data, int size)
 {

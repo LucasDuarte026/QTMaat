@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.16)
 
-project(QTMaat VERSION 0.1 LANGUAGES CXX)
+project(Ma'at VERSION 0.1 LANGUAGES CXX)
 
 set(CMAKE_AUTOUIC ON)
 set(CMAKE_AUTOMOC ON)
@@ -77,6 +77,8 @@ else()
         )
     endif()
 endif()
+
+configure_file(resources/maat_logo256.png ${CMAKE_BINARY_DIR}/maat_logo256.png COPYONLY)
 
 target_link_libraries(QTMaat
     PRIVATE Qt${QT_VERSION_MAJOR}::Widgets

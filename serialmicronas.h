@@ -22,12 +22,12 @@ public:
     QString getFirmwareVersion();
     bool setBaseAddress(uint8_t address,uint16_t data);
     QString readAddress(uint8_t address);
-    QSerialPort *serial;
 
 private:
     QString processResponse(const QByteArray &response);
 
 
+    QSerialPort *serial;
     uint8_t buffer[30];
     bool outputState;
     uint8_t errorCode;

@@ -14,6 +14,7 @@
 #include <QJsonObject>
 #include <QJsonValue>
 #include <QJsonArray>
+#include <QInputDialog>
 #include "sensorselectionwindow.h"
 #include "addsensordialog.h"
 #include "removesensordialog.h"
@@ -120,7 +121,7 @@ private slots:
 
     // Configurar a tela da engenharia
     void configTag_engenharia();
-    void toggleTreeEditability(bool checked);
+    void onEngineeringTreeItemClicked(const QModelIndex &index);
 
     // Aba de operação
     void on_prepare_operation_released();   // botão de preparação do servo antes da operação
@@ -172,6 +173,8 @@ private:
 
     // variáveis da engenharia
     EngParameters *engParameters;
+    bool engineeringEditCheckBoxChecked = false;
+
 
 };
 

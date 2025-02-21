@@ -8,5 +8,9 @@
         <file>resources/main_circle.png</file>
         <file>resources/HAL_USB_Programmer.png</file>
     </qresource>
-    <qresource prefix="/new/prefix1"/>
+    <qresource prefix="/icons">
+        <file>resources/maat_logo256.png</file>
+        <file>resources/maat_logo1024.png</file>
+        <file>resources/maat_icon.ico</file>
+    </qresource>
 </RCC>

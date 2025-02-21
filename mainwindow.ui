@@ -726,13 +726,6 @@
          </attribute>
          <layout class="QVBoxLayout" name="verticalLayout_20">
           <item>
-           <widget class="QCheckBox" name="engineeringEdit_checkBox">
-            <property name="text">
-             <string>Editar</string>
-            </property>
-           </widget>
-          </item>
-          <item>
            <widget class="QTreeView" name="treeView_engenharia">
             <property name="cursor" stdset="0">
              <cursorShape>PointingHandCursor</cursorShape>
@@ -1037,7 +1030,7 @@
                <cursorShape>PointingHandCursor</cursorShape>
               </property>
               <property name="currentIndex">
-               <number>1</number>
+               <number>0</number>
               </property>
               <widget class="QWidget" name="servo_output">
                <attribute name="title">
